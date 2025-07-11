@@ -1,8 +1,10 @@
 import 'package:arloop/router/route_names.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../theme/colors.dart';
+import '../../bloc/auth/authentication_bloc.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -16,6 +18,9 @@ class _SplashPageState extends State<SplashPage>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+
+  bool _hasInitialized = false;
+  bool _navigationCompleted = false;
 
   @override
   void initState() {
@@ -49,19 +54,53 @@ class _SplashPageState extends State<SplashPage>
     // Start animations
     _animationController.forward();
 
-    // Navigate to main app after 3 seconds
-    _navigateToMainApp();
+    // Initialize authentication
+    _initializeAuthentication();
   }
 
-  void _navigateToMainApp() {
+  void _initializeAuthentication() {
+    // Trigger authentication initialization
+    context.read<AuthenticationBloc>().add(InitialAuthenticationEvent());
+
+    // Set minimum splash duration of 3 seconds
     Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        context.go('/onboarding');
-        // Alternative: Navigator.of(context).pushReplacement(
-        //   MaterialPageRoute(builder: (context) => const HomePage()),
-        // );
+      if (mounted && !_navigationCompleted) {
+        _hasInitialized = true;
+        _handleNavigation();
       }
     });
+  }
+
+  void _handleNavigation() {
+    if (_navigationCompleted) return;
+
+    final authState = context.read<AuthenticationBloc>().state;
+
+    if (authState.isAuthenticated) {
+      // User is authenticated, go to home
+      _navigateToHome();
+    } else if (authState.isUnauthenticated) {
+      // User is not authenticated, go to onboarding
+      _navigateToOnboarding();
+    } else if (authState.isFailure) {
+      // Authentication failed, go to onboarding
+      _navigateToOnboarding();
+    }
+    // If still loading, wait for state change
+  }
+
+  void _navigateToHome() {
+    if (mounted && !_navigationCompleted) {
+      _navigationCompleted = true;
+      context.go('/home');
+    }
+  }
+
+  void _navigateToOnboarding() {
+    if (mounted && !_navigationCompleted) {
+      _navigationCompleted = true;
+      context.go('/onboarding');
+    }
   }
 
   @override
@@ -74,87 +113,126 @@ class _SplashPageState extends State<SplashPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.primary,
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.primary, AppColors.primaryDark],
+      body: BlocListener<AuthenticationBloc, AuthenticationState>(
+        listener: (context, state) {
+          // Handle authentication state changes
+          if (_hasInitialized && !_navigationCompleted) {
+            if (state.isAuthenticated) {
+              _navigateToHome();
+            } else if (state.isUnauthenticated || state.isFailure) {
+              _navigateToOnboarding();
+            }
+          }
+        },
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [AppColors.primary, AppColors.primaryDark],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Logo/Image Section
-              
-              // App Name Section
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: const Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Arogya Loop',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textOnPrimary,
-                        letterSpacing: 2,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Your Health Companion',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: AppColors.textOnPrimary,
-                        fontWeight: FontWeight.w300,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                  ],
+          child: SafeArea(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Logo/Image Section
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: ScaleTransition(
+                    scale: _scaleAnimation,
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      fit: BoxFit.fitHeight,
+                      height: 100,
+                      // width: 300,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
+                          Icons.medical_services,
+                          size: 60,
+                          color: AppColors.textOnPrimary,
+                        );
+                      },
+                                        ),)
                 ),
-              ),
 
-              // Loading Section
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 20),
-                  FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: const SizedBox(
-                      width: 30,
-                      height: 30,
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.textOnPrimary,
+                const SizedBox(height: 40),
+
+                // App Name Section
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                   
+                      Text(
+                        'Your Health Companion',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: AppColors.textOnPrimary,
+                          fontWeight: FontWeight.w300,
+                          letterSpacing: 1,
                         ),
-                        strokeWidth: 3,
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                  FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: const Text(
-                      'Loading...',
-                      style: TextStyle(
-                        color: AppColors.textOnPrimary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w300,
+                ),
+
+                const SizedBox(height: 10),
+
+                // Loading Section with Authentication Status
+                BlocBuilder<AuthenticationBloc, AuthenticationState>(
+                  builder: (context, state) {
+                    return FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(
+                            width: 30,
+                            height: 30,
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.textOnPrimary,
+                              ),
+                              strokeWidth: 3,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _getLoadingMessage(state),
+                            style: const TextStyle(
+                              color: AppColors.textOnPrimary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w300,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  String _getLoadingMessage(AuthenticationState state) {
+    if (state.isLoading) {
+      return 'Authenticating...';
+    } else if (state.isAuthenticated) {
+      return 'Welcome back!';
+    } else if (state.isUnauthenticated) {
+      return 'Loading...';
+    } else if (state.isFailure) {
+      return 'Loading...';
+    } else {
+      return 'Loading...';
+    }
   }
 }

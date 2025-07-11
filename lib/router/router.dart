@@ -1,3 +1,6 @@
+import 'package:arloop/screens/auth/login_page.dart';
+import 'package:arloop/screens/auth/register_page.dart';
+import 'package:arloop/screens/home/home_page.dart';
 import 'package:arloop/screens/onboarding/onboarding_page.dart';
 import 'package:arloop/screens/splash/splash_page.dart';
 import 'package:flutter/cupertino.dart';
@@ -21,6 +24,21 @@ final GoRouter appRouter = GoRouter(
       name: RouteNames.onboarding,
       pageBuilder: (context, state) => const CupertinoPage(child: OnboardingPage()),
       path: '/onboarding', 
+    ), 
+     GoRoute(
+      name: RouteNames.register,
+      pageBuilder: (context, state) => const CupertinoPage(child: RegisterPage()),
+      path: '/register', 
+    ), 
+     GoRoute(
+      name: RouteNames.login,
+      pageBuilder: (context, state) => const CupertinoPage(child: LoginPage()),
+      path: '/login', 
+    ), 
+     GoRoute(
+      name: RouteNames.home,
+      pageBuilder: (context, state) => const CupertinoPage(child: HomePage()),
+      path: '/home', 
     ), 
   ],
 );
