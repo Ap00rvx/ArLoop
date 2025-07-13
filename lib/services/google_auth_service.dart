@@ -1,5 +1,6 @@
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class GoogleAuthService {
@@ -10,35 +11,63 @@ class GoogleAuthService {
   GoogleSignInAccount? _currentUser;
   bool _isAuthorized = false;
   String _errorMessage = '';
+  GoogleSignIn? _googleSignIn;
 
   // Scopes required by the application
   static const List<String> scopes = <String>['email', 'profile'];
 
-  // Client ID - replace with your actual client ID
-  String? clientId = dotenv.env["CLIENT_ID"]; // Add your client ID here
-  static String? serverClientId =
-      dotenv.env["CLIENT_ID"]; // Add your server client ID here
+  // Environment-based configuration using dotenv
+  static String get _androidClientId => dotenv.env['CLIENT_ID'] ?? '';
+  static String get _iosClientId => dotenv.env['CLIENT_ID'] ?? '';
+  static String get _webClientId => dotenv.env['CLIENT_ID'] ?? '';
 
+  // Getters
   bool get isSignedIn => _currentUser != null;
   bool get isAuthorized => _isAuthorized;
   GoogleSignInAccount? get currentUser => _currentUser;
   String get errorMessage => _errorMessage;
 
-  /// Initialize Google Sign-In
+  /// Initialize Google Sign-In with environment-based client IDs
   Future<void> initialize() async {
     try {
-      final GoogleSignIn signIn = GoogleSignIn.instance;
+      // Ensure dotenv is loaded
+      if (!dotenv.isEveryDefined(['CLIENT_ID'])) {
+        await dotenv.load(fileName: ".env");
+      }
 
-      await signIn.initialize(clientId: clientId);
+      // Determine client ID based on platform
+      String? clientId;
+
+      if (kIsWeb) {
+        clientId = _webClientId.isEmpty ? null : _webClientId;
+      } else if (defaultTargetPlatform == TargetPlatform.android) {
+        clientId = _androidClientId.isEmpty ? null : _androidClientId;
+      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+        clientId = _iosClientId.isEmpty ? null : _iosClientId;
+      }
+
+      if (clientId == null || clientId.isEmpty) {
+        throw Exception('Google Client ID not configured in .env file');
+      }
+
+      if (kDebugMode) {
+        print('Using Google Client ID: ${clientId.substring(0, 10)}...');
+      }
+
+      _googleSignIn = GoogleSignIn(clientId: clientId, scopes: scopes);
 
       // Listen to authentication events
-      signIn.authenticationEvents.listen(
-        _handleAuthenticationEvent,
-        onError: _handleAuthenticationError,
+      _googleSignIn!.onCurrentUserChanged.listen(
+        _handleUserChanged,
+        onError: _handleError,
       );
 
-      // Attempt lightweight authentication
-      await signIn.attemptLightweightAuthentication();
+      // Attempt silent sign-in
+      await _googleSignIn!.signInSilently();
+
+      if (kDebugMode) {
+        print('Google Sign-In initialized successfully');
+      }
     } catch (e) {
       _errorMessage = 'Failed to initialize Google Sign-In: $e';
       if (kDebugMode) {
@@ -47,72 +76,81 @@ class GoogleAuthService {
     }
   }
 
-  /// Handle authentication events
-  Future<void> _handleAuthenticationEvent(
-    GoogleSignInAuthenticationEvent event,
-  ) async {
-    print(clientId);
-    print(serverClientId);
+  /// Handle user authentication state changes
+  Future<void> _handleUserChanged(GoogleSignInAccount? user) async {
     try {
-      final GoogleSignInAccount? user = switch (event) {
-        GoogleSignInAuthenticationEventSignIn() => event.user,
-        GoogleSignInAuthenticationEventSignOut() => null,
-      };
-
-      // Check for existing authorization
-      final GoogleSignInClientAuthorization? authorization = await user
-          ?.authorizationClient
-          .authorizationForScopes(scopes);
-
       _currentUser = user;
-      _isAuthorized = authorization != null;
-      _errorMessage = '';
 
-      if (kDebugMode) {
-        print(
-          'Authentication event: User = ${user?.email}, Authorized = $_isAuthorized',
-        );
+      if (user != null) {
+        // Check if user has authorized required scopes
+        _isAuthorized = await _checkAuthorization();
+
+        if (kDebugMode) {
+          print('User signed in: ${user.email}, Authorized: $_isAuthorized');
+        }
+      } else {
+        _isAuthorized = false;
+        if (kDebugMode) {
+          print('User signed out');
+        }
       }
+
+      _errorMessage = '';
     } catch (e) {
-      _errorMessage = 'Authentication event error: $e';
+      _errorMessage = 'Error handling user change: $e';
       if (kDebugMode) {
-        print('Authentication event error: $e');
+        print('User change error: $e');
       }
     }
   }
 
   /// Handle authentication errors
-  Future<void> _handleAuthenticationError(Object error) async {
+  void _handleError(dynamic error) {
     _currentUser = null;
     _isAuthorized = false;
-    _errorMessage = error is GoogleSignInException
-        ? _errorMessageFromSignInException(error)
-        : 'Unknown error: $error';
+    _errorMessage = 'Authentication error: $error';
 
     if (kDebugMode) {
-      print('Authentication error: $_errorMessage');
+      print('Google Auth error: $error');
+    }
+  }
+
+  /// Check if user has authorized required scopes
+  Future<bool> _checkAuthorization() async {
+    if (_currentUser == null) return false;
+
+    try {
+      final GoogleSignInAuthentication auth =
+          await _currentUser!.authentication;
+      return auth.accessToken != null;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Authorization check error: $e');
+      }
+      return false;
     }
   }
 
   /// Sign in with Google
   Future<GoogleUser?> signIn() async {
     try {
-      print(clientId);
-      print(serverClientId);
-      _errorMessage = '';
-
-      if (GoogleSignIn.instance.supportsAuthenticate()) {
-        await GoogleSignIn.instance.authenticate();
-      } else {
-        throw Exception('Google Sign-In not supported on this platform');
+      if (_googleSignIn == null) {
+        await initialize();
       }
 
-      if (_currentUser != null) {
+      _errorMessage = '';
+
+      final GoogleSignInAccount? user = await _googleSignIn!.signIn();
+
+      if (user != null) {
+        _currentUser = user;
+        _isAuthorized = await _checkAuthorization();
+
         return GoogleUser(
-          email: _currentUser!.email,
-          name: _currentUser!.displayName,
-          googleId: _currentUser!.id,
-          imageUrl: _currentUser!.photoUrl,
+          email: user.email,
+          name: user.displayName,
+          googleId: user.id,
+          imageUrl: user.photoUrl,
         );
       }
       return null;
@@ -128,7 +166,9 @@ class GoogleAuthService {
   /// Sign out
   Future<void> signOut() async {
     try {
-      await GoogleSignIn.instance.signOut();
+      if (_googleSignIn != null) {
+        await _googleSignIn!.signOut();
+      }
       _currentUser = null;
       _isAuthorized = false;
       _errorMessage = '';
@@ -143,7 +183,9 @@ class GoogleAuthService {
   /// Disconnect (revoke access)
   Future<void> disconnect() async {
     try {
-      await GoogleSignIn.instance.disconnect();
+      if (_googleSignIn != null) {
+        await _googleSignIn!.disconnect();
+      }
       _currentUser = null;
       _isAuthorized = false;
       _errorMessage = '';
@@ -169,30 +211,72 @@ class GoogleAuthService {
   }
 
   /// Silent sign-in
+  Future<GoogleUser?> signInSilently() async {
+    try {
+      if (_googleSignIn == null) {
+        await initialize();
+      }
 
-  /// Request additional scopes
-  Future<bool> requestScopes(List<String> additionalScopes) async {
+      final GoogleSignInAccount? user = await _googleSignIn!.signInSilently();
+
+      if (user != null) {
+        _currentUser = user;
+        _isAuthorized = await _checkAuthorization();
+
+        return GoogleUser(
+          email: user.email,
+          name: user.displayName,
+          googleId: user.id,
+          imageUrl: user.photoUrl,
+        );
+      }
+      return null;
+    } catch (e) {
+      _errorMessage = 'Silent sign-in failed: $e';
+      if (kDebugMode) {
+        print('Silent Sign-In Error: $e');
+      }
+      return null;
+    }
+  }
+
+  /// Get authentication token
+  Future<String?> getAccessToken() async {
     if (_currentUser == null) {
       _errorMessage = 'No user signed in';
-      return false;
+      return null;
     }
 
     try {
-      final GoogleSignInClientAuthorization authorization = await _currentUser!
-          .authorizationClient
-          .authorizeScopes([...scopes, ...additionalScopes]);
-
-      _isAuthorized = true;
-      _errorMessage = '';
-      return true;
+      final GoogleSignInAuthentication auth =
+          await _currentUser!.authentication;
+      return auth.accessToken;
     } catch (e) {
-      _errorMessage = e is GoogleSignInException
-          ? _errorMessageFromSignInException(e)
-          : 'Scope authorization failed: $e';
+      _errorMessage = 'Failed to get access token: $e';
       if (kDebugMode) {
-        print('Scope authorization error: $e');
+        print('Access token error: $e');
       }
-      return false;
+      return null;
+    }
+  }
+
+  /// Get ID token
+  Future<String?> getIdToken() async {
+    if (_currentUser == null) {
+      _errorMessage = 'No user signed in';
+      return null;
+    }
+
+    try {
+      final GoogleSignInAuthentication auth =
+          await _currentUser!.authentication;
+      return auth.idToken;
+    } catch (e) {
+      _errorMessage = 'Failed to get ID token: $e';
+      if (kDebugMode) {
+        print('ID token error: $e');
+      }
+      return null;
     }
   }
 
@@ -204,15 +288,9 @@ class GoogleAuthService {
     }
 
     try {
-      final GoogleSignInServerAuthorization? serverAuth = await _currentUser!
-          .authorizationClient
-          .authorizeServer(scopes);
-
-      return serverAuth?.serverAuthCode;
+      return _currentUser!.serverAuthCode;
     } catch (e) {
-      _errorMessage = e is GoogleSignInException
-          ? _errorMessageFromSignInException(e)
-          : 'Server auth code request failed: $e';
+      _errorMessage = 'Failed to get server auth code: $e';
       if (kDebugMode) {
         print('Server auth code error: $e');
       }
@@ -220,34 +298,26 @@ class GoogleAuthService {
     }
   }
 
-  /// Get authorization headers for API calls
-  Future<Map<String, String>?> getAuthHeaders() async {
-    if (_currentUser == null) {
-      _errorMessage = 'No user signed in';
-      return null;
-    }
-
-    try {
-      return await _currentUser!.authorizationClient.authorizationHeaders(
-        scopes,
-      );
-    } catch (e) {
-      _errorMessage = 'Failed to get authorization headers: $e';
-      if (kDebugMode) {
-        print('Authorization headers error: $e');
-      }
-      return null;
-    }
+  /// Check if Google Sign-In is available
+  bool isAvailable() {
+    return _googleSignIn != null;
   }
 
-  /// Convert GoogleSignInException to user-friendly message
-  String _errorMessageFromSignInException(GoogleSignInException e) {
-    return switch (e.code) {
-      GoogleSignInExceptionCode.canceled => 'Sign in was canceled',
-      GoogleSignInExceptionCode.interrupted => 'Network error occurred',
-      GoogleSignInExceptionCode.canceled => 'Sign in required',
-      _ => 'GoogleSignInException ${e.code}: ${e.description}',
-    };
+  /// Get platform-specific client ID
+  String? getCurrentClientId() {
+    if (kIsWeb) {
+      return _webClientId.isEmpty ? null : _webClientId;
+    } else if (defaultTargetPlatform == TargetPlatform.android) {
+      return _androidClientId.isEmpty ? null : _androidClientId;
+    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return _iosClientId.isEmpty ? null : _iosClientId;
+    }
+    return null;
+  }
+
+  /// Clear error message
+  void clearError() {
+    _errorMessage = '';
   }
 }
 

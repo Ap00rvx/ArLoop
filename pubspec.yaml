@@ -41,7 +41,8 @@ dependencies:
   google_fonts: ^6.2.1
   flutter_secure_storage: ^9.2.4
   flutter_dotenv: ^5.2.1
-  google_sign_in: ^7.1.0
+  google_sign_in: ^6.3.0
+  iconsax: ^0.0.8
 
 dev_dependencies:
   flutter_test:

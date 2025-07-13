@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iconsax/iconsax.dart';
 import '../../router/route_names.dart';
 import '../../theme/colors.dart';
 
@@ -13,7 +14,7 @@ class OnboardingPage extends StatefulWidget {
 class _OnboardingPageState extends State<OnboardingPage> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-
+  String _selectedLanguage = "en";
   // Onboarding data
   final List<OnboardingData> _onboardingData = [
     OnboardingData(
@@ -55,8 +56,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   void _navigateToHome() {
-    context.go("/register"); 
-
+    context.go("/register");
   }
 
   @override
@@ -65,7 +65,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
-          
           children: [
             // Skip Button
             _buildSkipButton(),
@@ -73,7 +72,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
             // Page View
             Expanded(
               child: PageView.builder(
-                physics: const NeverScrollableScrollPhysics(),
                 controller: _pageController,
                 onPageChanged: (index) {
                   setState(() {
@@ -102,21 +100,51 @@ class _OnboardingPageState extends State<OnboardingPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Visibility(
-            visible: _currentPage > 0,
-            child: IconButton(
-              onPressed: () {
-                if (_currentPage > 0) {
-                  _pageController.previousPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
-                }
-              },
-              icon: Icon(Icons.arrow_back_ios, color: AppColors.lightText,
+          Row(
+            children: [
+              Visibility(
+                visible: _currentPage > 0,
+                child: IconButton(
+                  onPressed: () {
+                    if (_currentPage > 0) {
+                      _pageController.previousPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  },
+                  icon: Icon(Icons.arrow_back_ios, color: AppColors.lightText),
                 ),
-            ),
+              ),
+              const SizedBox(width: 10),
+
+              Icon(
+                Iconsax.language_square4,
+                color: AppColors.lightText,
+                size: 20,
+              ),
+              const SizedBox(width: 5),
+              // dropdown to select language
+              DropdownButton<String>(
+                value: _selectedLanguage,
+                items: const [
+                  DropdownMenuItem(value: "en", child: Text("English")),
+                  DropdownMenuItem(value: "hi", child: Text("हिंदी")),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedLanguage = value!;
+                  });
+                },
+                underline: Container(),
+                style: const TextStyle(
+                  color: AppColors.lightText,
+                  fontSize: 16,
+                ),
+              ),
+            ],
           ),
+
           TextButton(
             onPressed: _skipOnboarding,
             style: TextButton.styleFrom(
@@ -269,7 +297,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 TextButton(
                   onPressed: () {
                     // Navigate to login
-                     context.goNamed(RouteNames.login);;
+                    context.goNamed(RouteNames.login);
+                    ;
                   },
                   child: const Text(
                     'Sign In',

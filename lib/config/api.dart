@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 
 class ApiClient {
   static const String baseUrl = "https://arloop-server.onrender.com/";
-  static const int timeoutDuration = 30; // seconds
+  static const int timeoutDuration = 60; // seconds
   
   // Singleton instance
   static final ApiClient _instance = ApiClient._internal();

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../theme/colors.dart';
+import '../../widgets/google_sign_in_button.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -448,32 +449,15 @@ class _LoginPageState extends State<LoginPage> {
 
           const SizedBox(height: 24),
 
-          // Social Buttons
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    // Handle Google sign in
-                  },
-                  icon: Image.asset(
-                    "assets/images/GOOGLE.png",
-                    height: 24,
-                    width: 24,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(Icons.g_mobiledata, size: 24);
-                    },
-                  ),
-                  label: const Text('Google'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+          // Google Sign-In Button
+          GoogleSignInButton(
+            onSuccess: () {
+              // Navigate to home page after successful Google sign-in
+              context.goNamed(RouteNames.home);
+            },
+            onError: (String errorMessage) {
+              _showErrorSnackBar(errorMessage);
+            },
           ),
         ],
       ),
