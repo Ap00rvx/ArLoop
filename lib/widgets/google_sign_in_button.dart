@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../services/google_auth_service.dart';
+import '../services/firebase_google_auth_service.dart';
 import '../theme/colors.dart';
+import 'google_logo.dart';
 
 class GoogleSignInButton extends StatefulWidget {
   final VoidCallback? onSuccess;
@@ -14,7 +15,8 @@ class GoogleSignInButton extends StatefulWidget {
 }
 
 class _GoogleSignInButtonState extends State<GoogleSignInButton> {
-  final GoogleAuthService _googleAuthService = GoogleAuthService();
+  final FirebaseGoogleAuthService _googleAuthService =
+      FirebaseGoogleAuthService();
   bool _isLoading = false;
 
   Future<void> _handleGoogleSignIn() async {
@@ -23,22 +25,38 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
     });
 
     try {
-      final GoogleUser? user = await _googleAuthService.signIn();
+      final AuthResult? result = await _googleAuthService.signInWithGoogle();
 
-      if (user != null) {
+      if (result != null) {
         // Success
-        widget.onSuccess?.call();
+        final userName =
+            result.backendUser['name'] ??
+            result.firebaseUser.displayName ??
+            'User';
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Welcome ${user.name ?? user.email}!'),
+              content: Text('Welcome $userName!'),
               backgroundColor: AppColors.success,
             ),
           );
         }
+
+        // Check if this is a new user who needs to complete their profile
+        if (result.isNewUser &&
+            (result.backendUser['phone'] == null ||
+                result.backendUser['phone'].toString().isEmpty)) {
+          // Show profile completion dialog
+          if (mounted) {
+            _showCompleteProfileDialog(result);
+          }
+        } else {
+          // Existing user or profile is complete
+          widget.onSuccess?.call();
+        }
       } else {
-        // User cancelled or error occurred
+        // Handle error
         final errorMessage = _googleAuthService.errorMessage.isEmpty
             ? 'Sign in was cancelled'
             : _googleAuthService.errorMessage;
@@ -75,47 +93,165 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
     }
   }
 
+  void _showCompleteProfileDialog(AuthResult result) {
+    final TextEditingController phoneController = TextEditingController();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Complete Your Profile'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Welcome ${result.backendUser['name']}!'),
+              const SizedBox(height: 16),
+              const Text(
+                'Please add your phone number to complete your profile.',
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: phoneController,
+                decoration: const InputDecoration(
+                  labelText: 'Phone Number',
+                  hintText: 'Enter 10-digit phone number',
+                  prefixIcon: Icon(Icons.phone),
+                ),
+                keyboardType: TextInputType.phone,
+                maxLength: 10,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                // Sign out and close dialog
+                await _googleAuthService.signOut();
+                if (mounted) {
+                  Navigator.of(context).pop();
+                  widget.onError?.call('Profile completion cancelled');
+                }
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final phone = phoneController.text.trim();
+                if (phone.length == 10) {
+                  // Complete profile
+                  final success = await _googleAuthService.completeProfile(
+                    phone: phone,
+                  );
+                  if (mounted) {
+                    Navigator.of(context).pop();
+                    if (success) {
+                      widget.onSuccess?.call();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Profile completed successfully!'),
+                          backgroundColor: AppColors.success,
+                        ),
+                      );
+                    } else {
+                      widget.onError?.call(_googleAuthService.errorMessage);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(_googleAuthService.errorMessage),
+                          backgroundColor: AppColors.error,
+                        ),
+                      );
+                    }
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Please enter a valid 10-digit phone number',
+                      ),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.textOnPrimary,
+              ),
+              child: const Text('Complete Profile'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       width: double.infinity,
-      height: 50,
-      child: OutlinedButton.icon(
-        onPressed: _isLoading ? null : _handleGoogleSignIn,
-        style: OutlinedButton.styleFrom(
-          backgroundColor: AppColors.neutral,
-          side: const BorderSide(color: AppColors.border),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+      height: 56,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.border.withOpacity(0.3),
+          width: 1.5,
         ),
-        icon: _isLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _isLoading ? null : _handleGoogleSignIn,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              spacing: 12,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_isLoading)
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.primary,
+                      ),
+                    ),
+                  )
+                else
+                  Image.asset(
+                    'assets/images/GOOGLE.png',
+                    width: 24,
+                    height: 24,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const GoogleLogo(size: 24);
+                    },
+                  ),
+               
+                Text(
+                  _isLoading ? 'Signing in...' : 'Continue with Google',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: AppColors.darkText,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
+                  ),
                 ),
-              )
-            : Image.asset(
-                'assets/images/google_logo.png',
-                width: 20,
-                height: 20,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(
-                    Icons.g_mobiledata,
-                    size: 24,
-                    color: AppColors.primary,
-                  );
-                },
-              ),
-        label: Text(
-          _isLoading ? 'Signing in...' : 'Continue with Google',
-          style: const TextStyle(
-            color: AppColors.darkText,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
+                const SizedBox(width: 36), // Balance the icon space
+              ],
+            ),
           ),
         ),
       ),

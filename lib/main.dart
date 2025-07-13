@@ -1,34 +1,40 @@
 import 'package:arloop/bloc/auth/authentication_bloc.dart';
 import 'package:arloop/router/router.dart';
-import 'package:arloop/services/google_auth_service.dart';
+import 'package:arloop/services/firebase_google_auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'theme/theme_data.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   // Load environment variables
   await dotenv.load(fileName: ".env");
 
-  // Initialize Google Auth Service
-  final googleAuthService = GoogleAuthService();
-  await googleAuthService.initialize();
+  // Initialize Firebase Google Auth Service
+  final firebaseGoogleAuthService = FirebaseGoogleAuthService();
+  await firebaseGoogleAuthService.initialize();
 
   if (kDebugMode) {
     final clientId = dotenv.env["CLIENT_ID"];
     print("Client ID loaded: ${clientId?.substring(0, 10)}...");
   }
-
-  runApp(ArLoopApp(googleAuthService: googleAuthService));
+  // remove all token for testing
+  // await FlutterSecureStorage().deleteAll();
+  runApp(ArLoopApp(firebaseGoogleAuthService: firebaseGoogleAuthService));
 }
 
 class ArLoopApp extends StatelessWidget {
-  final GoogleAuthService? googleAuthService;
+  final FirebaseGoogleAuthService? firebaseGoogleAuthService;
 
-  const ArLoopApp({super.key, this.googleAuthService});
+  const ArLoopApp({super.key, this.firebaseGoogleAuthService});
 
   @override
   Widget build(BuildContext context) {
