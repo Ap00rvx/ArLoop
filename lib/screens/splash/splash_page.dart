@@ -144,7 +144,7 @@ class _SplashPageState extends State<SplashPage>
                   child: ScaleTransition(
                     scale: _scaleAnimation,
                     child: Image.asset(
-                      'assets/images/logo.png',
+                      'assets/images/Argyaloop Logo.png',
                       fit: BoxFit.fitHeight,
                       height: 100,
                       // width: 300,

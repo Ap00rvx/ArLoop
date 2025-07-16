@@ -1,10 +1,10 @@
 import 'package:arloop/bloc/auth/authentication_bloc.dart';
+import 'package:arloop/bloc/store_owner/store_owner_bloc.dart';
 import 'package:arloop/router/router.dart';
 import 'package:arloop/services/firebase_google_auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'theme/theme_data.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -41,6 +41,8 @@ class ArLoopApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (context) => AuthenticationBloc()),
+        BlocProvider(create: (context) => StoreOwnerBloc()),
+
         // Add other providers here
       ],
       child: MaterialApp.router(

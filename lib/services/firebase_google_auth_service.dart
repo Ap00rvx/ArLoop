@@ -252,7 +252,7 @@ class FirebaseGoogleAuthService {
 
       // Clear stored tokens
       await _secureStorage.delete(key: 'firebase_id_token');
-      await _secureStorage.delete(key: 'backend_token');
+      await _secureStorage.delete(key: 'auth_token');
       await _secureStorage.delete(key: 'user_data');
 
       _errorMessage = '';
