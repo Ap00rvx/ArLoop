@@ -7,9 +7,17 @@ enum AuthenticationStatus {
   unauthenticated,
   failure,
 }
+enum Roles {
+  user,
+  vendor,
+  admin,
+}
 
 class AuthenticationState extends Equatable {
   final AuthenticationStatus status;
+  final Roles? role; 
+
+
   final User? user;
   final String? token;
   final String? errorMessage;
@@ -18,6 +26,7 @@ class AuthenticationState extends Equatable {
   const AuthenticationState({
     this.status = AuthenticationStatus.initial,
     this.user,
+    this.role,
     this.token,
     this.errorMessage,
     this.successMessage,
@@ -29,6 +38,7 @@ class AuthenticationState extends Equatable {
         user,
         token,
         errorMessage,
+        role ?? Roles.user, 
         successMessage,
       ];
 
@@ -44,6 +54,7 @@ class AuthenticationState extends Equatable {
   AuthenticationState copyWith({
     AuthenticationStatus? status,
     User? user,
+    Roles? role,
     String? token,
     String? errorMessage,
     String? successMessage,
@@ -51,6 +62,7 @@ class AuthenticationState extends Equatable {
     return AuthenticationState(
       status: status ?? this.status,
       user: user ?? this.user,
+      role: role ?? this.role,
       token: token ?? this.token,
       errorMessage: errorMessage,
       successMessage: successMessage,
@@ -65,6 +77,7 @@ class AuthenticationState extends Equatable {
       hasToken: ${token != null},
       errorMessage: $errorMessage,
       successMessage: $successMessage,
+      role: ${role?.name ?? 'user'},
     }''';
   }
 }

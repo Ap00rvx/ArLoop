@@ -1,5 +1,7 @@
+import 'package:arloop/router/route_names.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:latlong2/latlong.dart';
@@ -144,7 +146,12 @@ class _LoginTabState extends State<_LoginTab> {
     return BlocListener<StoreOwnerBloc, StoreOwnerState>(
       listener: (context, state) {
         if (state.isAuthenticated) {
-          context.go("/home"); // Navigate to vendor dashboard
+          final token = state.token;
+          FlutterSecureStorage().write(key: "auth_token", value: token);
+
+          context.goNamed(
+            RouteNames.vendorHome,
+          ); // Navigate to vendor dashboard
         }
 
         if (state.error != null) {
