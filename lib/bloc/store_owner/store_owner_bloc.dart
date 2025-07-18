@@ -45,7 +45,67 @@ class StoreOwnerBloc extends Bloc<StoreOwnerEvent, StoreOwnerState> {
     InitialStoreOwnerEvent event,
     Emitter<StoreOwnerState> emit,
   ) async {
-    emit(state.copyWith(isLoading: false, error: null, message: null));
+    emit(state.copyWith(isLoading: true, error: null, message: null));
+
+    try {
+      // Initialize the service (loads stored token)
+      await _storeOwnerService.initialize();
+
+      // Check if we have a stored token and if it's valid
+      final storedToken = await _storeOwnerService.getStoredToken();
+
+      if (storedToken != null) {
+        final isValid = await _storeOwnerService.isTokenValid();
+
+        if (isValid) {
+          // Token is valid, try to get profile
+          final profileResponse = await _storeOwnerService.getProfile();
+
+          if (profileResponse.isSuccess && profileResponse.data != null) {
+            emit(
+              state.copyWith(
+                isLoading: false,
+                isAuthenticated: true,
+                token: storedToken,
+                currentOwner: profileResponse.data!.owner,
+                currentShop: profileResponse.data!.shop,
+                message: 'Session restored successfully',
+              ),
+            );
+          } else {
+            // Profile fetch failed, clear token
+            await _storeOwnerService.clearAuthToken();
+            emit(
+              state.copyWith(
+                isLoading: false,
+                isAuthenticated: false,
+                message: 'Session expired',
+              ),
+            );
+          }
+        } else {
+          // Token is invalid, clear it
+          await _storeOwnerService.clearAuthToken();
+          emit(
+            state.copyWith(
+              isLoading: false,
+              isAuthenticated: false,
+              message: 'Session expired',
+            ),
+          );
+        }
+      } else {
+        // No stored token
+        emit(state.copyWith(isLoading: false, isAuthenticated: false));
+      }
+    } catch (e) {
+      emit(
+        state.copyWith(
+          isLoading: false,
+          error: 'Failed to initialize: ${e.toString()}',
+        ),
+      );
+    }
   }
 
   //* RegisterStoreOwnerEvent
@@ -62,7 +122,7 @@ class StoreOwnerBloc extends Bloc<StoreOwnerEvent, StoreOwnerState> {
         final authResponse = response.data!;
 
         if (authResponse.token != null) {
-          _storeOwnerService.setAuthToken(authResponse.token!);
+          await _storeOwnerService.setAuthToken(authResponse.token!);
         }
 
         emit(
@@ -102,7 +162,7 @@ class StoreOwnerBloc extends Bloc<StoreOwnerEvent, StoreOwnerState> {
         final authResponse = response.data!;
 
         if (authResponse.token != null) {
-          _storeOwnerService.setAuthToken(authResponse.token!);
+          await _storeOwnerService.setAuthToken(authResponse.token!);
         }
 
         emit(
@@ -133,7 +193,7 @@ class StoreOwnerBloc extends Bloc<StoreOwnerEvent, StoreOwnerState> {
     LogoutStoreOwnerEvent event,
     Emitter<StoreOwnerState> emit,
   ) async {
-    _storeOwnerService.clearAuthToken();
+    await _storeOwnerService.clearAuthToken();
 
     emit(
       state.copyWith(
@@ -393,7 +453,7 @@ class StoreOwnerBloc extends Bloc<StoreOwnerEvent, StoreOwnerState> {
     SetAuthTokenEvent event,
     Emitter<StoreOwnerState> emit,
   ) async {
-    _storeOwnerService.setAuthToken(event.token);
+    await _storeOwnerService.setAuthToken(event.token);
 
     emit(state.copyWith(token: event.token, isAuthenticated: true));
   }
@@ -403,7 +463,7 @@ class StoreOwnerBloc extends Bloc<StoreOwnerEvent, StoreOwnerState> {
     ClearAuthTokenEvent event,
     Emitter<StoreOwnerState> emit,
   ) async {
-    _storeOwnerService.clearAuthToken();
+    await _storeOwnerService.clearAuthToken();
 
     emit(
       state.copyWith(

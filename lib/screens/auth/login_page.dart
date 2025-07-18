@@ -3,6 +3,7 @@ import 'package:arloop/router/route_names.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import '../../theme/colors.dart';
 import '../../widgets/google_sign_in_button.dart';
@@ -112,11 +113,13 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: BlocListener<AuthenticationBloc, AuthenticationState>(
-        listener: (context, state) {
+        listener: (context, state)async {
           // TODO: implement listener
           if (state.status == AuthenticationStatus.failure) {
             _showErrorSnackBar(state.errorMessage ?? 'Login failed');
           } else if (state.status == AuthenticationStatus.authenticated) {
+            final token = state.token;
+            await FlutterSecureStorage().write(key: "auth_token", value: token);
             _showSuccessSnackBar('Login successful');
             context.goNamed(RouteNames.home);
           }

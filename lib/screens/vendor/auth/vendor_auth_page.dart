@@ -1,7 +1,6 @@
 import 'package:arloop/router/route_names.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:latlong2/latlong.dart';
@@ -144,14 +143,13 @@ class _LoginTabState extends State<_LoginTab> {
   @override
   Widget build(BuildContext context) {
     return BlocListener<StoreOwnerBloc, StoreOwnerState>(
-      listener: (context, state) {
+      listener: (context, state) async {
         if (state.isAuthenticated) {
           final token = state.token;
-          FlutterSecureStorage().write(key: "auth_token", value: token);
+          print('Store Owner Token: $token');
+          // Token is already saved by the service, no need to save manually
 
-          context.goNamed(
-            RouteNames.vendorHome,
-          ); // Navigate to vendor dashboard
+          context.goNamed(RouteNames.vendorHome);
         }
 
         if (state.error != null) {

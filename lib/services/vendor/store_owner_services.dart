@@ -2,9 +2,11 @@ import '../../config/api.dart';
 import '../../models/vendor/store_owner.dart';
 import '../../models/vendor/shop.dart';
 import '../../models/vendor/auth_response.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class StoreOwnerService {
   final ApiClient _apiClient = ApiClient();
+  static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
   // Authentication endpoints
   Future<ApiResponse<AuthResponse>> register(
@@ -119,12 +121,38 @@ class StoreOwnerService {
   }
 
   // Utility methods
-  void setAuthToken(String token) {
+  Future<void> setAuthToken(String token) async {
     _apiClient.setAuthToken(token);
+    await _storage.write(key: 'store_owner_token', value: token);
   }
 
-  void clearAuthToken() {
+  Future<void> clearAuthToken() async {
     _apiClient.clearAuthToken();
+    await _storage.delete(key: 'store_owner_token');
+  }
+
+  Future<String?> getStoredToken() async {
+    return await _storage.read(key: 'store_owner_token');
+  }
+
+  Future<bool> isTokenValid() async {
+    final token = await getStoredToken();
+    if (token == null) return false;
+
+    try {
+      // Try to make a simple authenticated request to validate token
+      final response = await _apiClient.get('api/store-owners/profile');
+      return response.isSuccess;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> initialize() async {
+    final token = await getStoredToken();
+    if (token != null) {
+      _apiClient.setAuthToken(token);
+    }
   }
 }
 

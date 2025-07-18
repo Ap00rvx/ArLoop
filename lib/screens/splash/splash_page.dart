@@ -1,4 +1,3 @@
-import 'package:arloop/router/route_names.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -21,7 +20,6 @@ class _SplashPageState extends State<SplashPage>
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
 
-  bool _hasInitialized = false;
   bool _navigationCompleted = false;
 
   @override
@@ -63,64 +61,78 @@ class _SplashPageState extends State<SplashPage>
   void _initializeAuthentication() {
     // Trigger authentication initialization
     context.read<AuthenticationBloc>().add(InitialAuthenticationEvent());
-
-    // Set minimum splash duration of 3 seconds
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted && !_navigationCompleted) {
-        _hasInitialized = true;
-        _handleNavigation();
-      }
-    });
   }
 
-  void _handleNavigation() async {
-    if (_navigationCompleted) return;
+  Future<String> _checkTokensAndGetRole() async {
+    // Add minimum splash duration
+    await Future.delayed(const Duration(seconds: 3));
 
-    final authState = context.read<AuthenticationBloc>().state;
-
-    if (authState.isAuthenticated) {
-      // User is authenticated, check role and navigate accordingly
-      await _navigateBasedOnRole();
-    } else if (authState.isUnauthenticated) {
-      // User is not authenticated, go to onboarding
-      _navigateToOnboarding();
-    } else if (authState.isFailure) {
-      // Authentication failed, go to onboarding
-      _navigateToOnboarding();
-    }
-    // If still loading, wait for state change
-  }
-
-  Future<void> _navigateBasedOnRole() async {
     try {
-      final role = await _getRole();
-      
-      if (mounted && !_navigationCompleted) {
-        _navigationCompleted = true;
-        
-        switch (role) {
-          case 'user':
-            context.go('/home');
-            break;
-          case 'storeOwner':
-            context.go('/vendor/home');
-            break;
-          case 'null':
-          default:
-            context.go('/onboarding');
-            break;
+      const storage = FlutterSecureStorage();
+
+      // Check for user token first
+      final userToken = await storage.read(key: "auth_token");
+      print('User Token: ${userToken != null ? "Found" : "Not found"}');
+
+      if (userToken != null &&
+          userToken.isNotEmpty &&
+          !JwtDecoder.isExpired(userToken)) {
+        final decodedToken = JwtDecoder.decode(userToken);
+        final role = decodedToken['role'] as String?;
+        print('User token role: $role');
+        if (role != null && role.isNotEmpty) {
+          return role;
         }
       }
+
+      // Check for store owner token
+      final storeOwnerToken = await storage.read(key: "store_owner_token");
+      print(
+        'Store Owner Token: ${storeOwnerToken != null ? "Found" : "Not found"}',
+      );
+
+      if (storeOwnerToken != null &&
+          storeOwnerToken.isNotEmpty &&
+          !JwtDecoder.isExpired(storeOwnerToken)) {
+        final decodedToken = JwtDecoder.decode(storeOwnerToken);
+        final role = decodedToken['role'] as String?;
+        print('Store owner token role: $role');
+        if (role != null && role.isNotEmpty) {
+          return role;
+        }
+        // If no role specified in store owner token, assume storeOwner
+        print('Assuming storeOwner role for store owner token');
+        return "storeOwner";
+      }
+
+      print('No valid tokens found, returning null');
+      return "null";
     } catch (e) {
-      // If there's an error getting the role, navigate to onboarding
-      _navigateToOnboarding();
+      print('Error checking tokens: $e');
+      return "null";
     }
   }
 
-  void _navigateToOnboarding() {
-    if (mounted && !_navigationCompleted) {
-      _navigationCompleted = true;
-      context.go('/onboarding');
+  void _navigateBasedOnRole(String role) {
+    if (_navigationCompleted) return;
+
+    _navigationCompleted = true;
+    print('Navigating based on role: $role');
+
+    switch (role) {
+      case 'user':
+        print('Navigating to user home');
+        context.go('/home');
+        break;
+      case 'storeOwner':
+        print('Navigating to vendor home');
+        context.go('/vendor/home');
+        break;
+      case 'null':
+      default:
+        print('Navigating to onboarding');
+        context.go('/onboarding');
+        break;
     }
   }
 
@@ -130,43 +142,35 @@ class _SplashPageState extends State<SplashPage>
     super.dispose();
   }
 
-  Future<String> _getRole() async {
-    try {
-      const storage = FlutterSecureStorage();
-      final token = await storage.read(key: "auth_token");
-      
-      if (token == null || token.isEmpty) {
-        return "null";
-      }
-
-      // Check if token is expired
-      if (JwtDecoder.isExpired(token)) {
-        // Clear expired token
-        await storage.delete(key: "auth_token");
-        return "null";
-      }
-
-      final decodedToken = JwtDecoder.decode(token);
-      final role = decodedToken['role'] as String?;
-      
-      if (role == null || role.isEmpty) {
-        return "null";
-      }
-      
-      return role;
-    } catch (e) {
-      // If there's any error decoding the token, return null
-      return "null";
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.primary,
       body: FutureBuilder<String>(
-        future: _getRole(),
+        future: _checkTokensAndGetRole(),
         builder: (context, snapshot) {
+          // Handle navigation based on the detected role
+          if (snapshot.hasData && !_navigationCompleted) {
+            final role = snapshot.data!;
+            print('FutureBuilder detected role: $role');
+
+            // Use addPostFrameCallback to navigate after the build is complete
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && !_navigationCompleted) {
+                _navigateBasedOnRole(role);
+              }
+            });
+          } else if (snapshot.hasError) {
+            print('FutureBuilder error: ${snapshot.error}');
+
+            // Navigate to onboarding on error
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && !_navigationCompleted) {
+                _navigateBasedOnRole('null');
+              }
+            });
+          }
+
           return Container(
             width: double.infinity,
             height: double.infinity,
@@ -225,36 +229,32 @@ class _SplashPageState extends State<SplashPage>
                   const SizedBox(height: 10),
 
                   // Loading Section with Authentication Status
-                  BlocBuilder<AuthenticationBloc, AuthenticationState>(
-                    builder: (context, state) {
-                      return FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const SizedBox(
-                              width: 30,
-                              height: 30,
-                              child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppColors.textOnPrimary,
-                                ),
-                                strokeWidth: 3,
-                              ),
+                  FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(
+                          width: 30,
+                          height: 30,
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.textOnPrimary,
                             ),
-                            const SizedBox(height: 16),
-                            Text(
-                              _getLoadingMessage(state, snapshot),
-                              style: const TextStyle(
-                                color: AppColors.textOnPrimary,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w300,
-                              ),
-                            ),
-                          ],
+                            strokeWidth: 3,
+                          ),
                         ),
-                      );
-                    },
+                        const SizedBox(height: 16),
+                        Text(
+                          _getLoadingMessage(snapshot),
+                          style: const TextStyle(
+                            color: AppColors.textOnPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w300,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -265,11 +265,11 @@ class _SplashPageState extends State<SplashPage>
     );
   }
 
-  String _getLoadingMessage(AuthenticationState state, AsyncSnapshot<String> roleSnapshot) {
-    if (state.isLoading || roleSnapshot.connectionState == ConnectionState.waiting) {
-      return 'Authenticating...';
-    } else if (state.isAuthenticated) {
-      final role = roleSnapshot.data ?? 'null';
+  String _getLoadingMessage(AsyncSnapshot<String> snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return 'Checking authentication...';
+    } else if (snapshot.hasData) {
+      final role = snapshot.data!;
       switch (role) {
         case 'user':
           return 'Welcome back!';
@@ -279,12 +279,10 @@ class _SplashPageState extends State<SplashPage>
         default:
           return 'Getting started...';
       }
-    } else if (state.isUnauthenticated) {
-      return 'Loading...';
-    } else if (state.isFailure) {
+    } else if (snapshot.hasError) {
       return 'Loading...';
     } else {
-      return 'Loading...';
+      return 'Initializing...';
     }
   }
 }

@@ -9,7 +9,7 @@ class AuthenticationService {
 
   // FlutterSecureStorage instance
   static const _storage = FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+   
   );
 
   // Secure storage keys
@@ -82,6 +82,7 @@ class AuthenticationService {
           user: response.data!.user,
           message: response.data!.message,
         );
+        
       } else {
         return AuthResult.failure(
           message: response.message,
