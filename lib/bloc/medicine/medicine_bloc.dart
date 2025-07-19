@@ -1,3 +1,4 @@
+import 'package:arloop/models/medicine_response.dart'as medResponse;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -275,7 +276,7 @@ class MedicineBloc extends Bloc<MedicineEvent, MedicineState> {
         emit(
           state.copyWith(
             status: MedicineStatus.success,
-            searchResults: response.data!.medicines,
+            searchResults: response.data!,
             successMessage: response.message,
           ),
         );

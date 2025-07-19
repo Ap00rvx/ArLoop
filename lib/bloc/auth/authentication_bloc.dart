@@ -6,12 +6,13 @@ import '../../models/user.dart';
 part 'authentication_events.dart';
 part 'authentication_state.dart';
 
-class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> {
+class AuthenticationBloc
+    extends Bloc<AuthenticationEvent, AuthenticationState> {
   final AuthenticationService _authService;
 
   AuthenticationBloc({AuthenticationService? authService})
-      : _authService = authService ?? AuthenticationService(),
-        super(const AuthenticationState()) {
+    : _authService = authService ?? AuthenticationService(),
+      super(const AuthenticationState()) {
     on<InitialAuthenticationEvent>(_onInitialAuthentication);
     on<LoginEvent>(_onLogin);
     on<RegisterEvent>(_onRegister);
@@ -33,34 +34,34 @@ class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> 
 
     try {
       await _authService.initialize();
-      
+
       if (_authService.isLoggedIn && _authService.currentUser != null) {
         // Verify token is still valid
         final isValid = await _authService.isTokenValid();
-        
+
         if (isValid) {
-          emit(state.copyWith(
-            status: AuthenticationStatus.authenticated,
-            user: _authService.currentUser,
-            token: _authService.authToken,
-          ));
+          emit(
+            state.copyWith(
+              status: AuthenticationStatus.authenticated,
+              user: _authService.currentUser,
+              token: _authService.authToken,
+            ),
+          );
         } else {
           // Token invalid, logout
           await _authService.logout();
-          emit(state.copyWith(
-            status: AuthenticationStatus.unauthenticated,
-          ));
+          emit(state.copyWith(status: AuthenticationStatus.unauthenticated));
         }
       } else {
-        emit(state.copyWith(
-          status: AuthenticationStatus.unauthenticated,
-        ));
+        emit(state.copyWith(status: AuthenticationStatus.unauthenticated));
       }
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthenticationStatus.failure,
-        errorMessage: 'Failed to initialize authentication: ${e.toString()}',
-      ));
+      emit(
+        state.copyWith(
+          status: AuthenticationStatus.failure,
+          errorMessage: 'Failed to initialize authentication: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -78,23 +79,29 @@ class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> 
       );
 
       if (result.isSuccess) {
-        emit(state.copyWith(
-          status: AuthenticationStatus.authenticated,
-          user: result.user,
-          token: _authService.authToken,
-          successMessage: result.message,
-        ));
+        emit(
+          state.copyWith(
+            status: AuthenticationStatus.authenticated,
+            user: result.user,
+            token: _authService.authToken,
+            successMessage: result.message,
+          ),
+        );
       } else {
-        emit(state.copyWith(
-          status: AuthenticationStatus.failure,
-          errorMessage: result.message,
-        ));
+        emit(
+          state.copyWith(
+            status: AuthenticationStatus.failure,
+            errorMessage: result.message,
+          ),
+        );
       }
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthenticationStatus.failure,
-        errorMessage: 'Login failed: ${e.toString()}',
-      ));
+      emit(
+        state.copyWith(
+          status: AuthenticationStatus.failure,
+          errorMessage: 'Login failed: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -114,23 +121,29 @@ class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> 
       );
 
       if (result.isSuccess) {
-        emit(state.copyWith(
-          status: AuthenticationStatus.authenticated,
-          user: result.user,
-          token: _authService.authToken,
-          successMessage: result.message,
-        ));
+        emit(
+          state.copyWith(
+            status: AuthenticationStatus.authenticated,
+            user: result.user,
+            token: _authService.authToken,
+            successMessage: result.message,
+          ),
+        );
       } else {
-        emit(state.copyWith(
-          status: AuthenticationStatus.failure,
-          errorMessage: result.message,
-        ));
+        emit(
+          state.copyWith(
+            status: AuthenticationStatus.failure,
+            errorMessage: result.message,
+          ),
+        );
       }
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthenticationStatus.failure,
-        errorMessage: 'Registration failed: ${e.toString()}',
-      ));
+      emit(
+        state.copyWith(
+          status: AuthenticationStatus.failure,
+          errorMessage: 'Registration failed: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -143,17 +156,21 @@ class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> 
 
     try {
       await _authService.logout();
-      emit(state.copyWith(
-        status: AuthenticationStatus.unauthenticated,
-        user: null,
-        token: null,
-        successMessage: 'Logged out successfully',
-      ));
+      emit(
+        state.copyWith(
+          status: AuthenticationStatus.unauthenticated,
+          user: null,
+          token: null,
+          successMessage: 'Logged out successfully',
+        ),
+      );
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthenticationStatus.failure,
-        errorMessage: 'Logout failed: ${e.toString()}',
-      ));
+      emit(
+        state.copyWith(
+          status: AuthenticationStatus.failure,
+          errorMessage: 'Logout failed: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -171,22 +188,28 @@ class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> 
       );
 
       if (result.isSuccess) {
-        emit(state.copyWith(
-          status: AuthenticationStatus.authenticated,
-          user: result.user,
-          successMessage: result.message,
-        ));
+        emit(
+          state.copyWith(
+            status: AuthenticationStatus.authenticated,
+            user: result.user,
+            successMessage: result.message,
+          ),
+        );
       } else {
-        emit(state.copyWith(
-          status: AuthenticationStatus.failure,
-          errorMessage: result.message,
-        ));
+        emit(
+          state.copyWith(
+            status: AuthenticationStatus.failure,
+            errorMessage: result.message,
+          ),
+        );
       }
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthenticationStatus.failure,
-        errorMessage: 'Profile update failed: ${e.toString()}',
-      ));
+      emit(
+        state.copyWith(
+          status: AuthenticationStatus.failure,
+          errorMessage: 'Profile update failed: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -204,21 +227,27 @@ class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> 
       );
 
       if (result.isSuccess) {
-        emit(state.copyWith(
-          status: AuthenticationStatus.authenticated,
-          successMessage: result.message,
-        ));
+        emit(
+          state.copyWith(
+            status: AuthenticationStatus.authenticated,
+            successMessage: result.message,
+          ),
+        );
       } else {
-        emit(state.copyWith(
-          status: AuthenticationStatus.failure,
-          errorMessage: result.message,
-        ));
+        emit(
+          state.copyWith(
+            status: AuthenticationStatus.failure,
+            errorMessage: result.message,
+          ),
+        );
       }
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthenticationStatus.failure,
-        errorMessage: 'Password change failed: ${e.toString()}',
-      ));
+      emit(
+        state.copyWith(
+          status: AuthenticationStatus.failure,
+          errorMessage: 'Password change failed: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -233,23 +262,29 @@ class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> 
       final result = await _authService.deleteAccount();
 
       if (result.isSuccess) {
-        emit(state.copyWith(
-          status: AuthenticationStatus.unauthenticated,
-          user: null,
-          token: null,
-          successMessage: result.message,
-        ));
+        emit(
+          state.copyWith(
+            status: AuthenticationStatus.unauthenticated,
+            user: null,
+            token: null,
+            successMessage: result.message,
+          ),
+        );
       } else {
-        emit(state.copyWith(
-          status: AuthenticationStatus.failure,
-          errorMessage: result.message,
-        ));
+        emit(
+          state.copyWith(
+            status: AuthenticationStatus.failure,
+            errorMessage: result.message,
+          ),
+        );
       }
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthenticationStatus.failure,
-        errorMessage: 'Account deletion failed: ${e.toString()}',
-      ));
+      emit(
+        state.copyWith(
+          status: AuthenticationStatus.failure,
+          errorMessage: 'Account deletion failed: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -262,24 +297,31 @@ class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> 
 
     try {
       final result = await _authService.getUserProfile();
+      print('Get Profile Result: ${result.message}');
 
       if (result.isSuccess) {
-        emit(state.copyWith(
-          status: AuthenticationStatus.authenticated,
-          user: result.user,
-          successMessage: result.message,
-        ));
+        emit(
+          state.copyWith(
+            status: AuthenticationStatus.authenticated,
+            user: result.user,
+            successMessage: result.message,
+          ),
+        );
       } else {
-        emit(state.copyWith(
-          status: AuthenticationStatus.failure,
-          errorMessage: result.message,
-        ));
+        emit(
+          state.copyWith(
+            status: AuthenticationStatus.failure,
+            errorMessage: result.message,
+          ),
+        );
       }
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthenticationStatus.failure,
-        errorMessage: 'Failed to get profile: ${e.toString()}',
-      ));
+      emit(
+        state.copyWith(
+          status: AuthenticationStatus.failure,
+          errorMessage: 'Failed to get profile: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -290,27 +332,33 @@ class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> 
   ) async {
     try {
       final isValid = await _authService.isTokenValid();
-      
+
       if (!isValid) {
         await _authService.logout();
-        emit(state.copyWith(
-          status: AuthenticationStatus.unauthenticated,
-          user: null,
-          token: null,
-          errorMessage: 'Session expired. Please login again.',
-        ));
+        emit(
+          state.copyWith(
+            status: AuthenticationStatus.unauthenticated,
+            user: null,
+            token: null,
+            errorMessage: 'Session expired. Please login again.',
+          ),
+        );
       } else {
         await _authService.refreshUserData();
-        emit(state.copyWith(
-          status: AuthenticationStatus.authenticated,
-          user: _authService.currentUser,
-        ));
+        emit(
+          state.copyWith(
+            status: AuthenticationStatus.authenticated,
+            user: _authService.currentUser,
+          ),
+        );
       }
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthenticationStatus.failure,
-        errorMessage: 'Token refresh failed: ${e.toString()}',
-      ));
+      emit(
+        state.copyWith(
+          status: AuthenticationStatus.failure,
+          errorMessage: 'Token refresh failed: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -319,9 +367,6 @@ class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> 
     ClearErrorEvent event,
     Emitter<AuthenticationState> emit,
   ) async {
-    emit(state.copyWith(
-      errorMessage: null,
-      successMessage: null,
-    ));
+    emit(state.copyWith(errorMessage: null, successMessage: null));
   }
 }

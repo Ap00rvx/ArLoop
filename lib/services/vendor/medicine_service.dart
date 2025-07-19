@@ -1,3 +1,5 @@
+import 'package:arloop/models/medicine_response.dart' as medResponse;
+
 import '../../config/api.dart';
 import '../../models/vendor/medicine.dart';
 
@@ -5,8 +7,6 @@ class MedicineService {
   static final ApiClient _client = ApiClient();
 
   MedicineService._();
-
-
 
   // Set authentication token
   static void setAuthToken(String token) {
@@ -204,7 +204,7 @@ class MedicineService {
         }
 
         final pagination = PaginationInfo.fromJson(paginationJson);
-      print('Pagination info: $pagination');
+        print('Pagination info: $pagination');
 
         final model = MedicinePaginatedResponse(
           medicines: medicines,
@@ -350,7 +350,7 @@ class MedicineService {
   }
 
   /// Search medicines (public endpoint)
-  static Future<ApiResponse<MedicinePaginatedResponse>> searchMedicines({
+  static Future<ApiResponse<medResponse.MedicineResponse>> searchMedicines({
     String? search,
     double? latitude,
     double? longitude,
@@ -386,16 +386,17 @@ class MedicineService {
       );
 
       if (response.isSuccess && response.data != null) {
-        final responseData = response.data!['data'];
-        return ApiResponse<MedicinePaginatedResponse>(
-          data: MedicinePaginatedResponse.fromJson(responseData),
+        final responseData = response.data!;
+        return ApiResponse<medResponse.MedicineResponse>(
+          data: medResponse.MedicineResponse.fromJson(responseData),
           statusCode: response.statusCode,
           message:
               response.data!['message'] ?? 'Medicines retrieved successfully',
           isSuccess: true,
         );
       } else {
-        return ApiResponse<MedicinePaginatedResponse>(
+        print('Search response error: ${response.message}');
+        return ApiResponse<medResponse.MedicineResponse>(
           data: null,
           statusCode: response.statusCode,
           message: response.message,
@@ -404,7 +405,8 @@ class MedicineService {
         );
       }
     } catch (e) {
-      return ApiResponse<MedicinePaginatedResponse>(
+      print('Error in searchMedicines: $e');
+      return ApiResponse<medResponse.MedicineResponse>(
         data: null,
         statusCode: 0,
         message: 'Failed to search medicines: $e',

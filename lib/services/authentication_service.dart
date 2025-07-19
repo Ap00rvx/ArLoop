@@ -8,9 +8,7 @@ class AuthenticationService {
   final ApiClient _client = ApiClient();
 
   // FlutterSecureStorage instance
-  static const _storage = FlutterSecureStorage(
-   
-  );
+  static const _storage = FlutterSecureStorage();
 
   // Secure storage keys
   static const String _tokenKey = 'auth_token';
@@ -82,7 +80,6 @@ class AuthenticationService {
           user: response.data!.user,
           message: response.data!.message,
         );
-        
       } else {
         return AuthResult.failure(
           message: response.message,
@@ -109,7 +106,7 @@ class AuthenticationService {
         fromJson: (json) => AuthResponse.fromJson(json),
       );
 
-      print(response.data); 
+      print(response.data);
 
       if (response.isSuccess && response.data != null) {
         await _saveAuthData(response.data!);
@@ -118,14 +115,14 @@ class AuthenticationService {
           message: response.data!.message,
         );
       } else {
-         print("here"); 
+        print("here");
         return AuthResult.failure(
           message: response.message,
           statusCode: response.statusCode,
         );
       }
     } catch (e) {
-       print("her2e"); 
+      print("her2e");
       return AuthResult.failure(
         message: 'Login failed: ${e.toString()}',
         statusCode: 0,
@@ -136,7 +133,8 @@ class AuthenticationService {
   /// Get user profile
   Future<AuthResult> getUserProfile() async {
     try {
-      if (!_isLoggedIn) {
+      final token = await _storage.read(key: _tokenKey);
+      if (token == null || token.isEmpty) {
         return AuthResult.failure(
           message: 'User not logged in',
           statusCode: 401,
@@ -144,6 +142,7 @@ class AuthenticationService {
       }
 
       final response = await _client.get<UserResponse>(
+        headers: {'Authorization': 'Bearer $token'},
         'api/users/profile',
         fromJson: (json) => UserResponse.fromJson(json),
       );
@@ -157,7 +156,6 @@ class AuthenticationService {
           message: response.data!.message,
         );
       } else {
-       
         return AuthResult.failure(
           message: response.message,
           statusCode: response.statusCode,

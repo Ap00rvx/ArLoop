@@ -1,5 +1,7 @@
+import 'package:arloop/router/route_names.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../bloc/store_owner/store_owner_bloc.dart';
 import '../../../bloc/shop/shop_bloc.dart';
 import '../../../bloc/medicine/medicine_bloc.dart';
@@ -146,6 +148,7 @@ class _VendorHomeState extends State<VendorHome> {
               icon: const Icon(Icons.logout),
               onPressed: () {
                 context.read<StoreOwnerBloc>().add(LogoutStoreOwnerEvent());
+                context.goNamed(RouteNames.splash);
               },
             ),
         ],

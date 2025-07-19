@@ -54,6 +54,8 @@ class Medicine {
   });
 
   factory Medicine.fromJson(Map<String, dynamic> json) {
+    print(json["keywords"]);
+    print(json["storeOwner"]);
     return Medicine(
       id: json['_id'] ?? json['id'] ?? '',
       medicineName: json['medicineName'] ?? '',
@@ -74,8 +76,8 @@ class Medicine {
       keywords: List<String>.from(json['keywords'] ?? []),
       batchDetails: json['batchDetails'] != null
           ? (json['batchDetails'] as List)
-              .map((batch) => MedicineBatch.fromJson(batch))
-              .toList()
+                .map((batch) => MedicineBatch.fromJson(batch))
+                .toList()
           : null,
       imageUrl: json['imageUrl'],
       storeOwner: json['storeOwner'] ?? '',
@@ -298,64 +300,73 @@ class MedicinePaginatedResponse {
     required this.medicines,
     required this.pagination,
   });
-// ...existing code...
+  // ...existing code...
 
-factory MedicinePaginatedResponse.fromJson(Map<String, dynamic> json) {
-  print("MedicinePaginatedResponse.fromJson input: $json");
-  print("Input type: ${json.runtimeType}");
-  
-  try {
-    // Parse pagination info
-    Map<String, dynamic> paginationJson;
-    if (json.containsKey('pagination') && json['pagination'] is Map<String, dynamic>) {
-      paginationJson = json['pagination'] as Map<String, dynamic>;
-    } else {
-      // Create default pagination
-      paginationJson = {
-        'currentPage': 1,
-        'totalPages': 1,
-        'totalMedicines': 0,
-        'hasNextPage': false,
-        'hasPrevPage': false,
-      };
-    }
-    
-    final pagination = PaginationInfo.fromJson(paginationJson);
-    print("Parsed pagination: $pagination");
-    
-    // Parse medicines list
-    List<Medicine> medicines = [];
-    if (json.containsKey('medicines')) {
-      final medicinesData = json['medicines'];
-      print("Medicines data type: ${medicinesData.runtimeType}");
-      
-      if (medicinesData is List) {
-        medicines = medicinesData.map((medicineJson) {
-          if (medicineJson is Map<String, dynamic>) {
-            return Medicine.fromJson(medicineJson);
-          } else {
-            print("Warning: Medicine item is not a Map: ${medicineJson.runtimeType}");
-            return null;
-          }
-        }).where((medicine) => medicine != null).cast<Medicine>().toList();
+  factory MedicinePaginatedResponse.fromJson(Map<String, dynamic> json) {
+    print("MedicinePaginatedResponse.fromJson input: $json");
+    print("Input type: ${json.runtimeType}");
+
+    try {
+      // Parse pagination info
+      Map<String, dynamic> paginationJson;
+      if (json.containsKey('pagination') &&
+          json['pagination'] is Map<String, dynamic>) {
+        paginationJson = json['pagination'] as Map<String, dynamic>;
       } else {
-        print("Warning: Medicines data is not a List: ${medicinesData.runtimeType}");
+        // Create default pagination
+        paginationJson = {
+          'currentPage': 1,
+          'totalPages': 1,
+          'totalMedicines': 0,
+          'hasNextPage': false,
+          'hasPrevPage': false,
+        };
       }
-    }
-    
-    print("Parsed ${medicines.length} medicines");
-    
-    return MedicinePaginatedResponse(
-      medicines: medicines,
-      pagination: pagination,
-    );
-  } catch (e) {
-    print("Error parsing MedicinePaginatedResponse: $e");
-    rethrow;
-  }
-}
 
-// ...existing code...
+      final pagination = PaginationInfo.fromJson(paginationJson);
+      print("Parsed pagination: $pagination");
+
+      // Parse medicines list
+      List<Medicine> medicines = [];
+      if (json.containsKey('medicines')) {
+        final medicinesData = json['medicines'];
+        print("Medicines data type: ${medicinesData.runtimeType}");
+
+        if (medicinesData is List) {
+          medicines = medicinesData
+              .map((medicineJson) {
+                if (medicineJson is Map<String, dynamic>) {
+                  return Medicine.fromJson(medicineJson);
+                } else {
+                  print(
+                    "Warning: Medicine item is not a Map: ${medicineJson.runtimeType}",
+                  );
+                  return null;
+                }
+              })
+              .where((medicine) => medicine != null)
+              .cast<Medicine>()
+              .toList();
+        } else {
+          print(
+            "Warning: Medicines data is not a List: ${medicinesData.runtimeType}",
+          );
+        }
+      }
+
+      print("Parsed ${medicines.length} medicines");
+
+      return MedicinePaginatedResponse(
+        medicines: medicines,
+        pagination: pagination,
+      );
+    } catch (e) {
+      print("Error parsing MedicinePaginatedResponse: $e");
+      rethrow;
+    }
+  }
+
+  // ...existing code...
   Map<String, dynamic> toJson() {
     return {
       'medicines': medicines.map((medicine) => medicine.toJson()).toList(),

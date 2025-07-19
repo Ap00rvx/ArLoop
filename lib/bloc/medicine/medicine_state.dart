@@ -9,7 +9,7 @@ class MedicineState extends Equatable {
   final MedicinePaginatedResponse? paginatedResponse;
   final List<Medicine> lowStockMedicines;
   final List<Medicine> expiredMedicines;
-  final List<Medicine> searchResults;
+  final medResponse.MedicineResponse? searchResults;
   final String? errorMessage;
   final String? successMessage;
   final bool hasReachedMax;
@@ -22,7 +22,7 @@ class MedicineState extends Equatable {
     this.paginatedResponse,
     this.lowStockMedicines = const [],
     this.expiredMedicines = const [],
-    this.searchResults = const [],
+    this.searchResults,
     this.errorMessage,
     this.successMessage,
     this.hasReachedMax = false,
@@ -56,7 +56,7 @@ class MedicineState extends Equatable {
     MedicinePaginatedResponse? paginatedResponse,
     List<Medicine>? lowStockMedicines,
     List<Medicine>? expiredMedicines,
-    List<Medicine>? searchResults,
+    medResponse.MedicineResponse? searchResults,
     String? errorMessage,
     String? successMessage,
     bool? hasReachedMax,

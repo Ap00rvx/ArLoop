@@ -54,9 +54,7 @@ class FirebaseGoogleAuthService {
 
   // Initialize API client with stored token
   Future<void> initializeApiClientWithToken() async {
-    final String? backendToken = await _secureStorage.read(
-      key: 'backend_token',
-    );
+    final String? backendToken = await _secureStorage.read(key: 'auth_token');
     if (backendToken != null) {
       _apiClient.setAuthToken(backendToken);
     }
@@ -109,11 +107,8 @@ class FirebaseGoogleAuthService {
       }
 
       // Store tokens securely
-    
-      await _secureStorage.write(
-        key: 'backend_token',
-        value: backendResult.token,
-      );
+
+      await _secureStorage.write(key: 'auth_token', value: backendResult.token);
       await _secureStorage.write(
         key: 'user_data',
         value: jsonEncode(backendResult.user),
@@ -148,7 +143,6 @@ class FirebaseGoogleAuthService {
         'api/users/google-auth',
         body: userData,
       );
-    
 
       if (kDebugMode) {
         print('Backend response status: ${response.statusCode}');
@@ -184,9 +178,7 @@ class FirebaseGoogleAuthService {
 
   Future<bool> completeProfile({required String phone}) async {
     try {
-      final String? backendToken = await _secureStorage.read(
-        key: 'backend_token',
-      );
+      final String? backendToken = await _secureStorage.read(key: 'auth_token');
       if (backendToken == null) {
         _errorMessage = 'No authentication token found';
         return false;
@@ -236,7 +228,7 @@ class FirebaseGoogleAuthService {
   }
 
   Future<String?> getBackendToken() async {
-    return await _secureStorage.read(key: 'backend_token');
+    return await _secureStorage.read(key: 'auth_token');
   }
 
   Future<void> signOut() async {
@@ -277,9 +269,7 @@ class FirebaseGoogleAuthService {
   // Check if user is authenticated (both Firebase and Backend)
   Future<bool> isAuthenticated() async {
     final User? firebaseUser = _firebaseAuth.currentUser;
-    final String? backendToken = await _secureStorage.read(
-      key: 'backend_token',
-    );
+    final String? backendToken = await _secureStorage.read(key: 'auth_token');
 
     return firebaseUser != null && backendToken != null;
   }

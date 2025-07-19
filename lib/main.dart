@@ -1,4 +1,5 @@
 import 'package:arloop/bloc/auth/authentication_bloc.dart';
+import 'package:arloop/bloc/location/location_bloc.dart';
 import 'package:arloop/bloc/medicine/medicine_bloc.dart';
 import 'package:arloop/bloc/store_owner/store_owner_bloc.dart';
 import 'package:arloop/router/router.dart';
@@ -30,11 +31,13 @@ void main() async {
     print("Client ID loaded: ${clientId?.substring(0, 10)}...");
   }
   // remove all token for testing
+  
   await FlutterSecureStorage().readAll().then((allTokens) {
     allTokens.forEach((key, value) {
       print("Key: $key, Value: $value");
     });
   });
+  // await FlutterSecureStorage().deleteAll(); 
   runApp(ArLoopApp(firebaseGoogleAuthService: firebaseGoogleAuthService));
 }
 
@@ -51,6 +54,7 @@ class ArLoopApp extends StatelessWidget {
         BlocProvider(create: (context) => StoreOwnerBloc()),
         BlocProvider(create: (context) => ShopBloc()),
         BlocProvider(create: (context) => MedicineBloc()),
+        BlocProvider(create: (context) => LocationBloc()),
 
         // Add other providers here
       ],
