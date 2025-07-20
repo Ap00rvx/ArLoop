@@ -1,12 +1,16 @@
+import 'package:arloop/router/route_names.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../theme/colors.dart';
 import '../../bloc/auth/authentication_bloc.dart';
 import '../../bloc/location/location_bloc.dart';
 import '../../bloc/store_owner/store_owner_bloc.dart';
+import '../../bloc/cart/cart_bloc.dart';
 import '../../services/location_service.dart';
 import '../medicine/medicine_search_page.dart';
+import 'cart_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -26,6 +30,7 @@ class _HomePageState extends State<HomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<LocationBloc>().add(GetCurrentLocationEvent());
       context.read<AuthenticationBloc>().add(GetProfileEvent());
+      context.read<CartBloc>().add(LoadCartEvent());
     });
   }
 
@@ -461,7 +466,8 @@ class _HomePageState extends State<HomePage> {
                   );
                 }
 
-                if (storeState.nearbyStores.isEmpty) {
+                if (storeState.nearbyStores.isEmpty &&
+                    storeState.isNearbyStoresLoading == false) {
                   return SliverToBoxAdapter(
                     child: Container(
                       margin: const EdgeInsets.all(16),
@@ -489,6 +495,47 @@ class _HomePageState extends State<HomePage> {
                           const SizedBox(height: 8),
                           const Text(
                             'Try adjusting your location or search in a different area',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: AppColors.lightText),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              context.read<LocationBloc>().add(
+                                GetCurrentLocationEvent(),
+                              );
+                            },
+                            child: const Text('Refresh Location'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                } else if (storeState.nearbyStores.isEmpty &&
+                    storeState.isNearbyStoresLoading == true) {
+                  return SliverToBoxAdapter(
+                    child: Container(
+                      margin: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: AppColors.neutral,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          CircularProgressIndicator(color: AppColors.primary),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Fetching Nearby Store',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.darkText,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'this while take a while',
                             textAlign: TextAlign.center,
                             style: TextStyle(color: AppColors.lightText),
                           ),
@@ -619,7 +666,7 @@ class _HomePageState extends State<HomePage> {
                                       ),
                                     ),
                                     const SizedBox(width: 16),
-                                     Icon(
+                                    Icon(
                                       Icons.location_pin,
                                       color: AppColors.lightText,
                                       size: 16,
@@ -788,32 +835,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildCartTab() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.shopping_cart_outlined,
-            size: 80,
-            color: AppColors.lightText,
-          ),
-          SizedBox(height: 16),
-          Text(
-            'Your cart is empty',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: AppColors.darkText,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Start shopping to add items to your cart',
-            style: TextStyle(color: AppColors.lightText),
-          ),
-        ],
-      ),
-    );
+    return const CartPage();
   }
 
   Widget _buildPrescriptionTab() {
@@ -1106,6 +1128,7 @@ class _HomePageState extends State<HomePage> {
                     'Sign out of your account',
                     () {
                       context.read<AuthenticationBloc>().add(LogoutEvent());
+                      context.goNamed(RouteNames.onboarding);
                     },
                     isDestructive: true,
                   ),
@@ -1150,68 +1173,119 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.neutral,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+    return BlocBuilder<CartBloc, CartState>(
+      builder: (context, cartState) {
+        return Container(
+          decoration: BoxDecoration(
+            color: AppColors.neutral,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.shadow,
+                blurRadius: 10,
+                offset: const Offset(0, -2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: AppColors.neutral,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.mutedText,
-        selectedLabelStyle: const TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 12,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontWeight: FontWeight.w400,
-          fontSize: 12,
-        ),
-        items: [
-          const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-            icon: Image.asset(
-              "assets/images/category.png",
-              height: 24,
-              color: _currentIndex == 1
-                  ? AppColors.primary
-                  : AppColors.mutedText,
+          child: BottomNavigationBar(
+            currentIndex: _currentIndex,
+            onTap: (index) {
+              if (context.read<LocationBloc>().state is LocationLoading) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please wait, location is loading...'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+                return;
+              }
+              setState(() {
+                _currentIndex = index;
+              });
+            },
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: AppColors.neutral,
+            selectedItemColor: AppColors.primary,
+            unselectedItemColor: AppColors.mutedText,
+            selectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
             ),
-            label: 'Categories',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart),
-            label: 'Cart',
-          ),
-          BottomNavigationBarItem(
-            icon: Image.asset(
-              "assets/images/pres.png",
-              height: 24,
-              color: _currentIndex == 3
-                  ? AppColors.primary
-                  : AppColors.mutedText,
+            unselectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.w400,
+              fontSize: 12,
             ),
-            label: 'Prescription',
+            items: [
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.home),
+                label: 'Home',
+              ),
+              BottomNavigationBarItem(
+                icon: Image.asset(
+                  "assets/images/category.png",
+                  height: 24,
+                  color: _currentIndex == 1
+                      ? AppColors.primary
+                      : AppColors.mutedText,
+                ),
+                label: 'Categories',
+              ),
+              BottomNavigationBarItem(
+                icon: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(
+                      Icons.shopping_cart,
+                      color: _currentIndex == 2
+                          ? AppColors.primary
+                          : AppColors.mutedText,
+                    ),
+                    if (cartState.totalItems > 0)
+                      Positioned(
+                        right: -6,
+                        top: -6,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: AppColors.error,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            '${cartState.totalItems}',
+                            style: const TextStyle(
+                              color: AppColors.textOnPrimary,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                label: 'Cart',
+              ),
+              BottomNavigationBarItem(
+                icon: Image.asset(
+                  "assets/images/pres.png",
+                  height: 24,
+                  color: _currentIndex == 3
+                      ? AppColors.primary
+                      : AppColors.mutedText,
+                ),
+                label: 'Prescription',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: 'Profile',
+              ),
+            ],
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
