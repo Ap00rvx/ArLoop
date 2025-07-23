@@ -7,3 +7,15 @@ class DemoImages {
     "https://plus.unsplash.com/premium_photo-1671721439617-491242a0507f?q=80&w=694&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   ];
 }
+
+class CategoryImages {
+  static const medicine = "assets/images/pharmacy1.jpg";
+  static const healthCare = "assets/images/healthcare.jpg";
+  static const babyCare = "assets/images/babycare.jpg";
+  static const supplements = "assets/images/supp.jpg";
+  static const diabetes = "assets/images/dia.jpg";
+  static const personalCare = "assets/images/personal care.jpg";
+  static const fitness = "assets/images/fitness.jpg";
+  static const vitamins = "assets/images/vitamins.png";
+  static const ayurveda = "assets/images/ayurveda.jpg";
+}

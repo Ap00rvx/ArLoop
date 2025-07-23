@@ -423,7 +423,7 @@ class _CheckoutPageState extends State<CheckoutPage>
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Order Summary Card
           _buildOrderSummaryCard(),
@@ -443,7 +443,13 @@ class _CheckoutPageState extends State<CheckoutPage>
 
           // Order Notes
           _buildOrderNotesCard(),
-          const SizedBox(height: 100), // Space for bottom bar
+          const SizedBox(height: 20),
+          // terms and conditions
+          const Text(
+            'By placing this order, you agree to our terms and conditions.',
+            style: TextStyle(fontSize: 12, color: AppColors.mutedText),
+          ),
+          const SizedBox(height: 30), // Space for bottom bar
         ],
       ),
     );
@@ -853,32 +859,47 @@ class _CheckoutPageState extends State<CheckoutPage>
   Widget _buildSummaryRow(String label, double amount, {bool isTotal = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: isTotal ? 16 : 14,
-              fontWeight: isTotal ? FontWeight.w600 : FontWeight.w500,
-              color: AppColors.darkText,
+      child: Container(
+        padding: isTotal
+            ? EdgeInsets.symmetric(horizontal: 16, vertical: 12)
+            : EdgeInsets.zero,
+        decoration: isTotal
+            ? BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.2),
+                border: Border.all(color: AppColors.border),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(12),
+                  bottomRight: Radius.circular(12),
+                ),
+              )
+            : null,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: isTotal ? 16 : 14,
+                fontWeight: isTotal ? FontWeight.w600 : FontWeight.w500,
+                color: AppColors.darkText,
+              ),
             ),
-          ),
-          Text(
-            amount == 0 && label.contains('Delivery')
-                ? 'FREE'
-                : '₹${amount.toStringAsFixed(2)}',
-            style: TextStyle(
-              fontSize: isTotal ? 16 : 14,
-              fontWeight: isTotal ? FontWeight.w600 : FontWeight.w500,
-              color: amount == 0 && label.contains('Delivery')
-                  ? AppColors.success
-                  : isTotal
-                  ? AppColors.primary
-                  : AppColors.darkText,
+            Text(
+              amount == 0 && label.contains('Delivery')
+                  ? 'FREE'
+                  : '₹${amount.toStringAsFixed(2)}',
+              style: TextStyle(
+                fontSize: isTotal ? 16 : 14,
+                fontWeight: isTotal ? FontWeight.w600 : FontWeight.w500,
+                color: amount == 0 && label.contains('Delivery')
+                    ? AppColors.success
+                    : isTotal
+                    ? AppColors.primary
+                    : AppColors.darkText,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
