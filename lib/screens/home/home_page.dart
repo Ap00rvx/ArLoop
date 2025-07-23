@@ -221,6 +221,86 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Future<void> _showLogoutConfirmationDialog() async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.logout,
+                  color: AppColors.error,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Logout',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: const Text(
+            'Are you sure you want to logout from your account?',
+            style: TextStyle(fontSize: 16, color: AppColors.lightText),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+              ),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  color: AppColors.lightText,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: AppColors.textOnPrimary,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Logout',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      context.read<AuthenticationBloc>().add(LogoutEvent());
+      context.goNamed(RouteNames.onboarding);
+    }
+  }
+
   final List<Category> _categories = [
     Category(
       name: 'Medicines',
@@ -1421,145 +1501,381 @@ class _HomePageState extends State<HomePage> {
     return SafeArea(
       child: BlocBuilder<AuthenticationBloc, AuthenticationState>(
         builder: (context, state) {
-          return CustomScrollView(
-            slivers: [
-              SliverAppBar(
-                expandedHeight: 200,
-                pinned: true,
-                backgroundColor: AppColors.primary,
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [AppColors.primary, AppColors.primaryDark],
-                      ),
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                // Modern Profile Header
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.primary,
+                        AppColors.primary.withOpacity(0.8),
+                        AppColors.primaryDark,
+                      ],
                     ),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(32),
+                      bottomRight: Radius.circular(32),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const SizedBox(height: 40),
-                        CircleAvatar(
-                          radius: 40,
-                          backgroundColor: AppColors.neutral,
-                          child: Text(
-                            state.user?.name != null
-                                ? state.user!.name.substring(0, 1).toUpperCase()
-                                : 'U',
-                            style: const TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
+                        // Profile Avatar with Shadow
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: Stack(
+                            children: [
+                              CircleAvatar(
+                                radius: 50,
+                                backgroundColor: AppColors.neutral,
+                                child: Text(
+                                  state.user?.name != null
+                                      ? state.user!.name
+                                            .substring(0, 1)
+                                            .toUpperCase()
+                                      : 'U',
+                                  style: const TextStyle(
+                                    fontSize: 36,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.success,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: AppColors.neutral,
+                                      width: 3,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.verified,
+                                    color: AppColors.neutral,
+                                    size: 16,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 16),
+
+                        // User Name
                         Text(
                           state.user?.name ?? 'User',
                           style: const TextStyle(
-                            fontSize: 20,
+                            fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: AppColors.textOnPrimary,
                           ),
                         ),
-                        Text(
-                          state.user?.email ?? '',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textOnPrimary,
+                        const SizedBox(height: 4),
+
+                        // User Email
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
                           ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            state.user?.email ?? 'user@example.com',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textOnPrimary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Quick Stats Row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildStatCard(
+                              '12',
+                              'Orders',
+                              Icons.shopping_bag_outlined,
+                            ),
+                            _buildStatCard(
+                              '5',
+                              'Favorites',
+                              Icons.favorite_border,
+                            ),
+                            _buildStatCard(
+                              '3',
+                              'Addresses',
+                              Icons.location_on_outlined,
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
                 ),
-              ),
-              SliverList(
-                delegate: SliverChildListDelegate([
-                  const SizedBox(height: 16),
-                  _buildProfileMenuItem(
-                    Icons.person,
-                    'Edit Profile',
-                    'Update your personal information',
-                    () {},
+
+                const SizedBox(height: 24),
+
+                // Profile Menu Items
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: [
+                      // Account Section
+                      _buildSectionHeader('Account'),
+                      const SizedBox(height: 12),
+                      _buildModernProfileMenuItem(
+                        Icons.person_outline,
+                        'Edit Profile',
+                        'Update your personal information',
+                        Colors.blue,
+                        () {},
+                      ),
+                      _buildModernProfileMenuItem(
+                        Icons.location_on_outlined,
+                        'Delivery Addresses',
+                        'Manage your delivery locations',
+                        Colors.orange,
+                        () {},
+                      ),
+                      _buildModernProfileMenuItem(
+                        Icons.payment_outlined,
+                        'Payment Methods',
+                        'Manage cards and payment options',
+                        Colors.green,
+                        () {},
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Orders Section
+                      _buildSectionHeader('Orders'),
+                      const SizedBox(height: 12),
+                      _buildModernProfileMenuItem(
+                        Icons.history_outlined,
+                        'Order History',
+                        'View your past orders and receipts',
+                        Colors.purple,
+                        () {},
+                      ),
+                      _buildModernProfileMenuItem(
+                        Icons.favorite_border,
+                        'Wishlist',
+                        'Your saved medicines and products',
+                        Colors.red,
+                        () {},
+                      ),
+                      _buildModernProfileMenuItem(
+                        Icons.local_shipping_outlined,
+                        'Track Orders',
+                        'Track your current orders',
+                        Colors.indigo,
+                        () {},
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Settings Section
+                      _buildSectionHeader('Settings'),
+                      const SizedBox(height: 12),
+                      _buildModernProfileMenuItem(
+                        Icons.notifications_outlined,
+                        'Notifications',
+                        'Manage notification preferences',
+                        Colors.amber,
+                        () {},
+                      ),
+                      _buildModernProfileMenuItem(
+                        Icons.security_outlined,
+                        'Privacy & Security',
+                        'Manage your account security',
+                        Colors.teal,
+                        () {},
+                      ),
+                      _buildModernProfileMenuItem(
+                        Icons.language_outlined,
+                        'Language',
+                        'Choose your preferred language',
+                        Colors.deepPurple,
+                        () {},
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Support Section
+                      _buildSectionHeader('Support'),
+                      const SizedBox(height: 12),
+                      _buildModernProfileMenuItem(
+                        Icons.help_outline,
+                        'Help & Support',
+                        'Get help and contact our support team',
+                        Colors.cyan,
+                        () {},
+                      ),
+                      _buildModernProfileMenuItem(
+                        Icons.info_outline,
+                        'About',
+                        'App version and company information',
+                        Colors.grey,
+                        () {},
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Logout Button
+                      _buildModernProfileMenuItem(
+                        Icons.logout,
+                        'Logout',
+                        'Sign out of your account',
+                        AppColors.error,
+                        _showLogoutConfirmationDialog,
+                        isDestructive: true,
+                      ),
+
+                      const SizedBox(height: 32),
+                    ],
                   ),
-                  _buildProfileMenuItem(
-                    Icons.location_on,
-                    'Delivery Address',
-                    'Manage your delivery addresses',
-                    () {},
-                  ),
-                  _buildProfileMenuItem(
-                    Icons.history,
-                    'Order History',
-                    'View your past orders',
-                    () {},
-                  ),
-                  _buildProfileMenuItem(
-                    Icons.favorite,
-                    'Wishlist',
-                    'Your favorite medicines',
-                    () {},
-                  ),
-                  _buildProfileMenuItem(
-                    Icons.notifications,
-                    'Notifications',
-                    'Manage notification preferences',
-                    () {},
-                  ),
-                  _buildProfileMenuItem(
-                    Icons.help,
-                    'Help & Support',
-                    'Get help and contact support',
-                    () {},
-                  ),
-                  _buildProfileMenuItem(
-                    Icons.logout,
-                    'Logout',
-                    'Sign out of your account',
-                    () {
-                      context.read<AuthenticationBloc>().add(LogoutEvent());
-                      context.goNamed(RouteNames.onboarding);
-                    },
-                    isDestructive: true,
-                  ),
-                ]),
-              ),
-            ],
+                ),
+              ],
+            ),
           );
         },
       ),
     );
   }
 
-  Widget _buildProfileMenuItem(
+  Widget _buildStatCard(String value, String label, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: AppColors.textOnPrimary, size: 20),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textOnPrimary,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textOnPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: AppColors.darkText,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernProfileMenuItem(
     IconData icon,
     String title,
     String subtitle,
+    Color iconColor,
     VoidCallback onTap, {
     bool isDestructive = false,
   }) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppColors.neutral,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.darkText.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: ListTile(
-        leading: Icon(
-          icon,
-          color: isDestructive ? AppColors.error : AppColors.primary,
+        onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        leading: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: iconColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            icon,
+            color: isDestructive ? AppColors.error : iconColor,
+            size: 24,
+          ),
         ),
         title: Text(
           title,
           style: TextStyle(
             fontWeight: FontWeight.w600,
+            fontSize: 16,
             color: isDestructive ? AppColors.error : AppColors.darkText,
           ),
         ),
         subtitle: Text(
           subtitle,
-          style: const TextStyle(color: AppColors.lightText),
+          style: const TextStyle(color: AppColors.lightText, fontSize: 13),
         ),
-        trailing: const Icon(Icons.chevron_right, color: AppColors.lightText),
-        onTap: onTap,
+        trailing: Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: AppColors.neutralGrey.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            Icons.chevron_right,
+            color: AppColors.mutedText,
+            size: 20,
+          ),
+        ),
       ),
     );
   }
