@@ -193,8 +193,8 @@ class _SplashPageState extends State<SplashPage>
                     child: ScaleTransition(
                       scale: _scaleAnimation,
                       child: Image.asset(
-                        'assets/images/splash-removebg-preview.png',
-                        fit: BoxFit.fitHeight,
+                        'assets/images/arloop_logo_raw.png',
+                        fit: BoxFit.contain,
                         height: 150,
                         errorBuilder: (context, error, stackTrace) {
                           return const Icon(
@@ -206,8 +206,7 @@ class _SplashPageState extends State<SplashPage>
                       ),
                     ),
                   ),
-
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 20),
 
                   // App Name Section
                   FadeTransition(

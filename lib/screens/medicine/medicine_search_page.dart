@@ -14,8 +14,9 @@ import '../../services/cart_service.dart';
 
 class MedicineSearchPage extends StatefulWidget {
   final String? category;
+  final bool isEmergency;
 
-  const MedicineSearchPage({super.key, this.category});
+  const MedicineSearchPage({super.key, this.category, this.isEmergency = false});
 
   @override
   State<MedicineSearchPage> createState() => _MedicineSearchPageState();
@@ -24,6 +25,7 @@ class MedicineSearchPage extends StatefulWidget {
 class _MedicineSearchPageState extends State<MedicineSearchPage> {
   final TextEditingController _searchController = TextEditingController();
   String? _selectedCategory;
+  bool _isEmergency = false;
 
   final List<String> _categories = [
     'All',
@@ -76,6 +78,8 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+    _isEmergency = widget.isEmergency;
+
   }
 
   @override

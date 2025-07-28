@@ -4,6 +4,7 @@ import 'package:lottie/lottie.dart';
 import '../../bloc/cart/cart_bloc.dart';
 import '../../theme/colors.dart';
 import '../../services/cart_service.dart';
+import '../tracking/order_tracking_page.dart';
 
 class CheckoutPage extends StatefulWidget {
   final List<CartItem> cartItems;
@@ -1018,5 +1019,19 @@ class _CheckoutPageState extends State<CheckoutPage>
       _isProcessingOrder = false;
       _isOrderPlaced = true;
     });
+
+    // Navigate to order tracking page after a short delay
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => OrderTrackingPage(
+            orderId:
+                'ARG${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}',
+            totalAmount: _totalOrderAmount,
+          ),
+        ),
+      );
+    }
   }
 }

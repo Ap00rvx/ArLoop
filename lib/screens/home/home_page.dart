@@ -15,6 +15,7 @@ import '../../bloc/cart/cart_bloc.dart';
 import '../../services/location_service.dart';
 import '../../services/prescription_service.dart';
 import '../medicine/medicine_search_page.dart';
+import '../emergency/emergency_service_page.dart';
 import 'cart_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -32,7 +33,7 @@ class _HomePageState extends State<HomePage> {
   final PrescriptionService _prescriptionService = PrescriptionService();
   List<PrescriptionItem> _prescriptions = [];
   bool _isLoadingPrescriptions = false;
-
+  String lang = "en";
   @override
   void initState() {
     super.initState();
@@ -100,6 +101,17 @@ class _HomePageState extends State<HomePage> {
                   backgroundColor: AppColors.success,
                 ),
               );
+
+              // Show dialog asking if user wants to browse medicines
+              final bool? browseMedicines = await _showBrowseMedicinesDialog();
+              if (browseMedicines == true) {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const MedicineSearchPage(category: 'All'),
+                  ),
+                );
+              }
             }
           } else {
             setState(() {
@@ -161,6 +173,82 @@ class _HomePageState extends State<HomePage> {
                 }
               },
               child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<bool?> _showBrowseMedicinesDialog() async {
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.local_pharmacy,
+                  color: AppColors.success,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Browse Medicines',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: const Text(
+            'Would you like to browse medicines for your uploaded prescription?',
+            style: TextStyle(fontSize: 16, color: AppColors.lightText),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+              ),
+              child: const Text(
+                'Later',
+                style: TextStyle(
+                  color: AppColors.lightText,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.textOnPrimary,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Browse Now',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
           ],
         );
@@ -439,12 +527,52 @@ class _HomePageState extends State<HomePage> {
                 ),
                 onPressed: () {},
               ),
-              IconButton(
-                icon: const Icon(
-                  Icons.favorite_border,
-                  color: AppColors.textOnPrimary,
+              const SizedBox(width: 8),
+              // build dropdown for languages
+              DropdownButton<String>(
+                dropdownColor: AppColors.primary,
+                focusColor: AppColors.primary,
+                value: lang,
+                underline: Container(),
+                borderRadius: BorderRadius.circular(8),
+                style: const TextStyle(color: AppColors.textOnPrimary),
+                icon: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: const Icon(
+                    Icons.language,
+                    color: AppColors.textOnPrimary,
+                  ),
                 ),
-                onPressed: () {},
+                items: const [
+                  DropdownMenuItem(
+                    value: 'en',
+                    child: Text(
+                      'English',
+                      style: TextStyle(color: AppColors.textOnPrimary),
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: 'hi',
+                    child: Text(
+                      'हिंदी',
+                      style: TextStyle(color: AppColors.textOnPrimary),
+                    ),
+                  ),
+                ],
+                onChanged: (value) {
+                  // Handle language change
+                  if (value != null) {
+                    setState(() {
+                      lang = value;
+                    });
+                    //
+                  }
+                },
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.logout, color: AppColors.textOnPrimary),
+                onPressed: _showLogoutConfirmationDialog,
               ),
             ],
           ),
@@ -524,6 +652,8 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
+          // Emergency Button Section
+
           // Featured Products Section
           SliverToBoxAdapter(
             child: Container(
@@ -541,60 +671,154 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-
-          // Emergency Services Banner
           SliverToBoxAdapter(
             child: Container(
-              margin: const EdgeInsets.all(10),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.ctaAccent, AppColors.ctaAccentLight],
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.emergency,
-                    color: AppColors.neutral,
-                    size: 32,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Emergency Medicine',
-                          style: TextStyle(
-                            color: AppColors.neutral,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const Text(
-                          '24/7 Emergency delivery available',
-                          style: TextStyle(
-                            color: AppColors.neutral,
-                            fontSize: 12,
-                          ),
-                        ),
+              margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const EmergencyServicePage(),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.error,
+                        AppColors.error.withOpacity(0.8),
                       ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.error.withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.neutral,
-                      foregroundColor: AppColors.ctaAccent,
-                    ),
-                    child: const Text('Order Now'),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.textOnPrimary.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.emergency,
+                          color: AppColors.textOnPrimary,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Emergency Services',
+                              style: TextStyle(
+                                color: AppColors.textOnPrimary,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Tap for immediate emergency assistance',
+                              style: TextStyle(
+                                color: AppColors.textOnPrimary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.textOnPrimary.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.arrow_forward_ios,
+                          color: AppColors.textOnPrimary,
+                          size: 16,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
+
+          // // Emergency Services Banner
+          // SliverToBoxAdapter(
+          //   child: Container(
+          //     margin: const EdgeInsets.all(10),
+          //     padding: const EdgeInsets.all(16),
+          //     decoration: BoxDecoration(
+          //       gradient: LinearGradient(
+          //         colors: [AppColors.ctaAccent, AppColors.ctaAccentLight],
+          //       ),
+          //       borderRadius: BorderRadius.circular(12),
+          //     ),
+          //     child: Row(
+          //       children: [
+          //         const Icon(
+          //           Icons.emergency,
+          //           color: AppColors.neutral,
+          //           size: 32,
+          //         ),
+          //         const SizedBox(width: 12),
+          //         Expanded(
+          //           child: Column(
+          //             crossAxisAlignment: CrossAxisAlignment.start,
+          //             children: [
+          //               const Text(
+          //                 'Emergency Medicine',
+          //                 style: TextStyle(
+          //                   color: AppColors.neutral,
+          //                   fontSize: 16,
+          //                   fontWeight: FontWeight.bold,
+          //                 ),
+          //               ),
+          //               const Text(
+          //                 '24/7 Emergency delivery available',
+          //                 style: TextStyle(
+          //                   color: AppColors.neutral,
+          //                   fontSize: 12,
+          //                 ),
+          //               ),
+          //             ],
+          //           ),
+          //         ),
+          //         ElevatedButton(
+          //           onPressed: () {
+          //             Navigator.of(context).push(
+          //               CupertinoPageRoute(
+          //                 builder: (context) => MedicineSearchPage(),
+          //               ),
+          //             );
+          //           },
+          //           style: ElevatedButton.styleFrom(
+          //             backgroundColor: AppColors.neutral,
+          //             foregroundColor: AppColors.ctaAccent,
+          //           ),
+          //           child: const Text('Order Now'),
+          //         ),
+          //       ],
+          //     ),
+          //   ),
+          // ),
 
           // Categories Section
           SliverToBoxAdapter(
@@ -1018,6 +1242,50 @@ class _HomePageState extends State<HomePage> {
               style: TextStyle(color: AppColors.textOnPrimary),
             ),
             backgroundColor: AppColors.primary,
+            actions: [
+              // build dropdown for languages
+              DropdownButton<String>(
+                dropdownColor: AppColors.primary,
+                focusColor: AppColors.primary,
+                value: lang,
+                underline: Container(),
+                borderRadius: BorderRadius.circular(8),
+                style: const TextStyle(color: AppColors.textOnPrimary),
+                icon: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: const Icon(
+                    Icons.language,
+                    color: AppColors.textOnPrimary,
+                  ),
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'en',
+                    child: Text(
+                      'English',
+                      style: TextStyle(color: AppColors.textOnPrimary),
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: 'hi',
+                    child: Text(
+                      'हिंदी',
+                      style: TextStyle(color: AppColors.textOnPrimary),
+                    ),
+                  ),
+                ],
+                onChanged: (value) {
+                  // Handle language change
+                  if (value != null) {
+                    setState(() {
+                      lang = value;
+                    });
+                    //
+                  }
+                },
+              ),
+              const SizedBox(width: 8),
+            ],
           ),
           SliverPadding(
             padding: const EdgeInsets.all(16),
