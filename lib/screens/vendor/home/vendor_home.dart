@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:arloop/router/route_names.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,7 +7,6 @@ import '../../../bloc/store_owner/store_owner_bloc.dart';
 import '../../../bloc/shop/shop_bloc.dart';
 import '../../../bloc/medicine/medicine_bloc.dart';
 import '../../../theme/colors.dart';
-import '../../../models/vendor/shop.dart';
 import '../../../models/vendor/medicine.dart';
 
 class VendorHome extends StatefulWidget {
@@ -18,8 +18,14 @@ class VendorHome extends StatefulWidget {
 
 class _VendorHomeState extends State<VendorHome> {
   int _currentIndex = 0;
+  bool _isShopOpen = true; // Dynamic shop status
+  String _currentTime = DateTime.now()
+      .toLocal()
+      .toString()
+      .split(' ')[1]
+      .substring(0, 5);
 
-  // Demo medicines data
+  // Demo medicines data - Enhanced for demo
   final List<Map<String, dynamic>> _demoMedicines = [
     {
       'name': 'Paracetamol 500mg',
@@ -61,12 +67,112 @@ class _VendorHomeState extends State<VendorHome> {
       'prescription': false,
       'image': 'assets/images/med.png',
     },
+    {
+      'name': 'Omeprazole 20mg',
+      'category': 'Gastric',
+      'price': 65.00,
+      'stock': 80,
+      'prescription': false,
+      'image': 'assets/images/med.png',
+    },
+    {
+      'name': 'Crocin Advance',
+      'category': 'Pain Relief',
+      'price': 28.00,
+      'stock': 120,
+      'prescription': false,
+      'image': 'assets/images/med.png',
+    },
+    {
+      'name': 'Azithromycin 500mg',
+      'category': 'Antibiotic',
+      'price': 95.00,
+      'stock': 45,
+      'prescription': true,
+      'image': 'assets/images/med.png',
+    },
+  ];
+
+  // Demo orders data for investor demo
+  final List<Map<String, dynamic>> _demoOrders = [
+    {
+      'id': 'ORD001',
+      'customerName': 'Rajesh Kumar',
+      'customerPhone': '+91 98765 43210',
+      'items': ['Paracetamol 500mg x2', 'Vitamin D3 x1'],
+      'totalAmount': 171.00,
+      'status': 'Pending',
+      'orderTime': '2 hours ago',
+      'deliveryAddress': 'MG Road, Bangalore',
+      'paymentStatus': 'Paid',
+    },
+    {
+      'id': 'ORD002',
+      'customerName': 'Priya Sharma',
+      'customerPhone': '+91 87654 32109',
+      'items': ['Crocin Advance x1', 'Omeprazole 20mg x2'],
+      'totalAmount': 158.00,
+      'status': 'Processing',
+      'orderTime': '4 hours ago',
+      'deliveryAddress': 'Koramangala, Bangalore',
+      'paymentStatus': 'Paid',
+    },
+    {
+      'id': 'ORD003',
+      'customerName': 'Amit Patel',
+      'customerPhone': '+91 76543 21098',
+      'items': ['Insulin 100IU x1', 'Aspirin 75mg x3'],
+      'totalAmount': 495.00,
+      'status': 'Delivered',
+      'orderTime': '1 day ago',
+      'deliveryAddress': 'Whitefield, Bangalore',
+      'paymentStatus': 'Paid',
+    },
+    {
+      'id': 'ORD004',
+      'customerName': 'Sneha Reddy',
+      'customerPhone': '+91 65432 10987',
+      'items': ['Azithromycin 500mg x1', 'Paracetamol 500mg x1'],
+      'totalAmount': 120.50,
+      'status': 'Ready for Pickup',
+      'orderTime': '30 minutes ago',
+      'deliveryAddress': 'HSR Layout, Bangalore',
+      'paymentStatus': 'COD',
+    },
+    {
+      'id': 'ORD005',
+      'customerName': 'Vikram Singh',
+      'customerPhone': '+91 54321 09876',
+      'items': ['Amoxicillin 250mg x2', 'Vitamin D3 x1'],
+      'totalAmount': 290.00,
+      'status': 'Cancelled',
+      'orderTime': '6 hours ago',
+      'deliveryAddress': 'Indiranagar, Bangalore',
+      'paymentStatus': 'Refunded',
+    },
   ];
 
   @override
   void initState() {
     super.initState();
     _initializeBlocs();
+    _updateCurrentTime();
+    // Update time every minute
+    Timer.periodic(const Duration(minutes: 1), (timer) {
+      if (mounted) {
+        _updateCurrentTime();
+      }
+    });
+  }
+
+  void _updateCurrentTime() {
+    final now = DateTime.now();
+    setState(() {
+      _currentTime =
+          '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+      // Auto-close shop after 10 PM or before 8 AM for demo
+      _isShopOpen = now.hour >= 8 && now.hour < 22;
+    });
   }
 
   void _initializeBlocs() {
@@ -135,13 +241,157 @@ class _VendorHomeState extends State<VendorHome> {
         elevation: 0,
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
-        title: Text(_getPageTitle(_currentIndex)),
+        title: Row(
+          children: [
+            // ArogyaLoop Logo
+            Container(
+              height: 32,
+              width: 32,
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset(
+                  'assets/images/arloop_logo_raw.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(
+                      Icons.local_pharmacy,
+                      color: AppColors.primary,
+                      size: 20,
+                    );
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _getPageTitle(_currentIndex),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    'ArogyaLoop Vendor',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withOpacity(0.8),
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              // Show notifications
+          // Shop Status Toggle
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isShopOpen = !_isShopOpen;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Shop status changed to ${_isShopOpen ? 'Open' : 'Closed'}',
+                  ),
+                  backgroundColor: _isShopOpen ? Colors.green : Colors.red,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
             },
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: _isShopOpen ? Colors.green : Colors.red,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _isShopOpen ? Icons.store : Icons.store_outlined,
+                    size: 14,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    _isShopOpen ? 'Open' : 'Closed',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Time Display
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+            child: Text(
+              _currentTime,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          // Notifications with badge
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined),
+                onPressed: () {
+                  // Show notifications
+                  _showNotificationsDialog();
+                },
+              ),
+              if (_demoOrders
+                  .where(
+                    (order) =>
+                        (order['status'] ?? '') == 'Pending' ||
+                        (order['status'] ?? '') == 'Processing',
+                  )
+                  .isNotEmpty)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '${_demoOrders.where((order) => (order['status'] ?? '') == 'Pending' || (order['status'] ?? '') == 'Processing').length}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
           ),
           if (_currentIndex == 3) // Only show logout on profile page
             IconButton(
@@ -239,6 +489,8 @@ class _VendorHomeState extends State<VendorHome> {
           _buildWelcomeSection(),
           const SizedBox(height: 20),
           _buildQuickStatsSection(),
+          const SizedBox(height: 20),
+          _buildRecentOrdersSection(),
           const SizedBox(height: 20),
           _buildShopDetailsSection(),
           const SizedBox(height: 20),
@@ -713,7 +965,7 @@ class _VendorHomeState extends State<VendorHome> {
                 ),
               ],
               const SizedBox(height: 16),
-              _buildShopStatusIndicator(state.currentShop),
+              _buildDynamicShopStatusIndicator(),
             ],
           ),
         );
@@ -721,56 +973,55 @@ class _VendorHomeState extends State<VendorHome> {
     );
   }
 
-  Widget _buildShopStatusIndicator(Shop? shop) {
-    if (shop == null) return const SizedBox.shrink();
+  Widget _buildDynamicShopStatusIndicator() {
+    Color statusColor = _isShopOpen ? Colors.green : Colors.red;
+    String statusText = _isShopOpen ? 'Open' : 'Closed';
+    IconData statusIcon = _isShopOpen ? Icons.check_circle : Icons.cancel;
 
-    Color statusColor;
-    String statusText;
-    IconData statusIcon;
-
-    switch (shop.operationalStatus.toLowerCase()) {
-      case 'open':
-        statusColor = Colors.green;
-        statusText = 'Open';
-        statusIcon = Icons.check_circle;
-        break;
-      case 'closed':
-        statusColor = Colors.red;
-        statusText = 'Closed';
-        statusIcon = Icons.cancel;
-        break;
-      case 'busy':
-        statusColor = Colors.orange;
-        statusText = 'Busy';
-        statusIcon = Icons.hourglass_empty;
-        break;
-      default:
-        statusColor = Colors.grey;
-        statusText = 'Unknown';
-        statusIcon = Icons.help;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: statusColor.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: statusColor.withOpacity(0.5)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(statusIcon, color: statusColor, size: 16),
-          const SizedBox(width: 6),
-          Text(
-            statusText,
-            style: TextStyle(
-              color: statusColor,
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _isShopOpen = !_isShopOpen;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Shop status changed to ${_isShopOpen ? 'Open' : 'Closed'}',
             ),
+            backgroundColor: _isShopOpen ? Colors.green : Colors.red,
+            duration: const Duration(seconds: 2),
           ),
-        ],
+        );
+      },
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: statusColor.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: statusColor.withOpacity(0.5)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(statusIcon, color: statusColor, size: 16),
+            const SizedBox(width: 6),
+            Text(
+              statusText,
+              style: TextStyle(
+                color: statusColor,
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.touch_app,
+              color: statusColor.withOpacity(0.7),
+              size: 12,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -798,7 +1049,7 @@ class _VendorHomeState extends State<VendorHome> {
                   Expanded(
                     child: _buildStatCard(
                       'Total Orders',
-                      state.statistics!.metrics.totalOrders.toString(),
+                      state.statistics?.metrics.totalOrders.toString() ?? '0',
                       Icons.shopping_cart,
                       Colors.blue,
                     ),
@@ -820,7 +1071,7 @@ class _VendorHomeState extends State<VendorHome> {
                   Expanded(
                     child: _buildStatCard(
                       'Total Orders',
-                      '128',
+                      '${_demoOrders.length}',
                       Icons.shopping_cart,
                       Colors.blue,
                     ),
@@ -829,7 +1080,7 @@ class _VendorHomeState extends State<VendorHome> {
                   Expanded(
                     child: _buildStatCard(
                       'Revenue',
-                      '₹25,400',
+                      '₹${_demoOrders.fold(0.0, (sum, order) => sum + ((order['totalAmount'] as num?) ?? 0)).toStringAsFixed(0)}',
                       Icons.currency_rupee,
                       Colors.green,
                     ),
@@ -911,6 +1162,193 @@ class _VendorHomeState extends State<VendorHome> {
           ),
           const SizedBox(height: 4),
           Text(title, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentOrdersSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Recent Orders',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () {
+                // View all orders
+                _showAllOrdersDialog();
+              },
+              icon: const Icon(Icons.arrow_forward, size: 16),
+              label: const Text('View All'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 200,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: _demoOrders.length > 5 ? 5 : _demoOrders.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final order = _demoOrders[index];
+              return _buildOrderCard(order);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOrderCard(Map<String, dynamic> order) {
+    Color statusColor;
+    IconData statusIcon;
+
+    switch (order['status'] ?? 'Unknown') {
+      case 'Pending':
+        statusColor = Colors.orange;
+        statusIcon = Icons.schedule;
+        break;
+      case 'Processing':
+        statusColor = Colors.blue;
+        statusIcon = Icons.loop;
+        break;
+      case 'Ready for Pickup':
+        statusColor = Colors.green;
+        statusIcon = Icons.check_circle;
+        break;
+      case 'Delivered':
+        statusColor = Colors.green;
+        statusIcon = Icons.delivery_dining;
+        break;
+      case 'Cancelled':
+        statusColor = Colors.red;
+        statusIcon = Icons.cancel;
+        break;
+      default:
+        statusColor = Colors.grey;
+        statusIcon = Icons.help;
+    }
+
+    return Container(
+      width: 280,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                order['id'] ?? 'N/A',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(statusIcon, size: 12, color: statusColor),
+                    const SizedBox(width: 4),
+                    Text(
+                      order['status'] ?? 'Unknown',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: statusColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            order['customerName'] ?? 'Unknown Customer',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            order['customerPhone'] ?? 'N/A',
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Items: ${(order['items'] as List?)?.length ?? 0}',
+            style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '₹${(order['totalAmount'] as num?)?.toStringAsFixed(2) ?? '0.00'}',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primary,
+            ),
+          ),
+          const Spacer(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                order['orderTime'] ?? 'Unknown time',
+                style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: (order['paymentStatus'] ?? 'Unpaid') == 'Paid'
+                      ? Colors.green.withOpacity(0.1)
+                      : Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  order['paymentStatus'] ?? 'Unpaid',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: (order['paymentStatus'] ?? 'Unpaid') == 'Paid'
+                        ? Colors.green
+                        : Colors.orange,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -1575,7 +2013,7 @@ class _VendorHomeState extends State<VendorHome> {
                 Icons.receipt_long,
                 Colors.orange,
                 () {
-                  // View orders
+                  _showAllOrdersDialog();
                 },
               ),
             ),
@@ -1791,6 +2229,115 @@ class _VendorHomeState extends State<VendorHome> {
   }
 
   // Medicine Management Methods
+  void _showNotificationsDialog() {
+    final pendingOrders = _demoOrders
+        .where(
+          (order) =>
+              (order['status'] ?? '') == 'Pending' ||
+              (order['status'] ?? '') == 'Processing',
+        )
+        .toList();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.notifications, color: AppColors.primary),
+            const SizedBox(width: 8),
+            const Text('Notifications'),
+            const Spacer(),
+            Container(
+              height: 24,
+
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${pendingOrders.length}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 300,
+          child: pendingOrders.isEmpty
+              ? const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.notifications_off,
+                        size: 64,
+                        color: Colors.grey,
+                      ),
+                      SizedBox(height: 16),
+                      Text('No pending notifications'),
+                    ],
+                  ),
+                )
+              : ListView.separated(
+                  itemCount: pendingOrders.length,
+                  separatorBuilder: (context, index) => const Divider(),
+                  itemBuilder: (context, index) {
+                    final order = pendingOrders[index];
+                    return ListTile(
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: order['status'] == 'Pending'
+                              ? Colors.orange.withOpacity(0.1)
+                              : Colors.blue.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          (order['status'] ?? 'Unknown') == 'Pending'
+                              ? Icons.schedule
+                              : Icons.loop,
+                          color: (order['status'] ?? 'Unknown') == 'Pending'
+                              ? Colors.orange
+                              : Colors.blue,
+                        ),
+                      ),
+                      title: Text('Order ${order['id'] ?? 'N/A'}'),
+                      subtitle: Text(
+                        '${order['customerName'] ?? 'Unknown'} - ₹${order['totalAmount'] ?? 0}',
+                      ),
+                      trailing: Text(
+                        order['orderTime'] ?? 'Unknown time',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    );
+                  },
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAllOrdersDialog() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => _AllOrdersPage(orders: _demoOrders),
+      ),
+    );
+  }
+
   void _showAddMedicineDialog() {
     showDialog(
       context: context,
@@ -2450,6 +2997,275 @@ class _SearchMedicineDialogState extends State<SearchMedicineDialog> {
           child: const Text('Search'),
         ),
       ],
+    );
+  }
+}
+
+// Separate page for viewing all orders
+class _AllOrdersPage extends StatelessWidget {
+  final List<Map<String, dynamic>> orders;
+
+  const _AllOrdersPage({required this.orders});
+
+  Widget _buildFullOrderCard(Map<String, dynamic> order) {
+    Color statusColor;
+    IconData statusIcon;
+
+    switch (order['status'] ?? 'Unknown') {
+      case 'Pending':
+        statusColor = Colors.orange;
+        statusIcon = Icons.schedule;
+        break;
+      case 'Processing':
+        statusColor = Colors.blue;
+        statusIcon = Icons.loop;
+        break;
+      case 'Ready for Pickup':
+        statusColor = Colors.green;
+        statusIcon = Icons.check_circle;
+        break;
+      case 'Delivered':
+        statusColor = Colors.green;
+        statusIcon = Icons.delivery_dining;
+        break;
+      case 'Cancelled':
+        statusColor = Colors.red;
+        statusIcon = Icons.cancel;
+        break;
+      default:
+        statusColor = Colors.grey;
+        statusIcon = Icons.help;
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                order['id'] ?? 'N/A',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(statusIcon, size: 16, color: statusColor),
+                    const SizedBox(width: 6),
+                    Text(
+                      order['status'] ?? 'Unknown',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: statusColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Customer Details
+          Row(
+            children: [
+              const Icon(Icons.person, size: 16, color: Colors.grey),
+              const SizedBox(width: 8),
+              Text(
+                order['customerName'] ?? 'Unknown Customer',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          Row(
+            children: [
+              const Icon(Icons.phone, size: 16, color: Colors.grey),
+              const SizedBox(width: 8),
+              Text(
+                order['customerPhone'] ?? 'N/A',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          Row(
+            children: [
+              const Icon(Icons.location_on, size: 16, color: Colors.grey),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  order['deliveryAddress'] ?? 'No address provided',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Items
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Items (${(order['items'] as List?)?.length ?? 0}):',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (order['items'] != null)
+                  ...((order['items'] as List).map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        '• $item',
+                        style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                      ),
+                    ),
+                  )),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Amount and Payment Status
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Total Amount',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  Text(
+                    '₹${(order['totalAmount'] as num?)?.toStringAsFixed(2) ?? '0.00'}',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: (order['paymentStatus'] ?? 'Unpaid') == 'Paid'
+                          ? Colors.green.withOpacity(0.1)
+                          : Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      order['paymentStatus'] ?? 'Unpaid',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: (order['paymentStatus'] ?? 'Unpaid') == 'Paid'
+                            ? Colors.green
+                            : Colors.orange,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    order['orderTime'] ?? 'Unknown time',
+                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        title: const Text('All Orders'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: orders.isEmpty
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.receipt_long_outlined,
+                    size: 64,
+                    color: Colors.grey,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'No orders found',
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: orders.length,
+              itemBuilder: (context, index) {
+                final order = orders[index];
+                return _buildFullOrderCard(order);
+              },
+            ),
     );
   }
 }
