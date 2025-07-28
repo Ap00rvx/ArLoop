@@ -61,43 +61,116 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isTablet = size.width > 600;
+    final isLandscape = size.width > size.height;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // Skip Button
-              _buildSkipButton(),
-          
-              // Page View
-              Expanded(
-                child: PageView.builder(
-                  controller: _pageController,
-                  onPageChanged: (index) {
-                    setState(() {
-                      _currentPage = index;
-                    });
-                  },
-                  itemCount: _onboardingData.length,
-                  itemBuilder: (context, index) {
-                    return _buildOnboardingPage(_onboardingData[index]);
-                  },
-                ),
-              ),
-          
-              // Bottom Section
-              _buildBottomSection(),
-            ],
-          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            if (isLandscape && !isTablet) {
+              // Landscape phone layout
+              return _buildLandscapeLayout(constraints);
+            } else {
+              // Portrait layout (phone and tablet)
+              return _buildPortraitLayout(constraints, isTablet);
+            }
+          },
         ),
       ),
     );
   }
 
+  Widget _buildPortraitLayout(BoxConstraints constraints, bool isTablet) {
+    return SingleChildScrollView(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: constraints.maxHeight),
+        child: Column(
+          children: [
+            // Skip Button
+            _buildSkipButton(),
+
+            // Page View
+            SizedBox(
+              height: constraints.maxHeight * (isTablet ? 0.6 : 0.5),
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentPage = index;
+                  });
+                },
+                itemCount: _onboardingData.length,
+                itemBuilder: (context, index) {
+                  return _buildOnboardingPage(
+                    _onboardingData[index],
+                    Size(constraints.maxWidth, constraints.maxHeight),
+                    isTablet: isTablet,
+                  );
+                },
+              ),
+            ),
+
+            // Bottom Section
+            _buildBottomSection(isTablet: isTablet),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLandscapeLayout(BoxConstraints constraints) {
+    return Row(
+      children: [
+        // Left side - Page View
+        Expanded(
+          flex: 3,
+          child: PageView.builder(
+            controller: _pageController,
+            onPageChanged: (index) {
+              setState(() {
+                _currentPage = index;
+              });
+            },
+            itemCount: _onboardingData.length,
+            itemBuilder: (context, index) {
+              return _buildOnboardingPage(
+                _onboardingData[index],
+                Size(constraints.maxWidth * 0.6, constraints.maxHeight),
+                isLandscape: true,
+              );
+            },
+          ),
+        ),
+
+        // Right side - Controls and info
+        Expanded(
+          flex: 2,
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildSkipButton(),
+                Expanded(
+                  child: Center(child: _buildBottomSection(isLandscape: true)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildSkipButton() {
+    final size = MediaQuery.of(context).size;
+    final isTablet = size.width > 600;
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isTablet ? 20 : 16),
       alignment: Alignment.centerRight,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -115,17 +188,21 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       );
                     }
                   },
-                  icon: Icon(Icons.arrow_back_ios, color: AppColors.lightText),
+                  icon: Icon(
+                    Icons.arrow_back_ios,
+                    color: AppColors.lightText,
+                    size: isTablet ? 24 : 20,
+                  ),
                 ),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: isTablet ? 12 : 10),
 
               Icon(
                 Iconsax.language_square4,
                 color: AppColors.lightText,
-                size: 20,
+                size: isTablet ? 24 : 20,
               ),
-              const SizedBox(width: 5),
+              SizedBox(width: isTablet ? 8 : 5),
               // dropdown to select language
               DropdownButton<String>(
                 value: _selectedLanguage,
@@ -139,9 +216,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   });
                 },
                 underline: Container(),
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppColors.lightText,
-                  fontSize: 16,
+                  fontSize: isTablet ? 18 : 16,
                 ),
               ),
             ],
@@ -150,12 +227,15 @@ class _OnboardingPageState extends State<OnboardingPage> {
           TextButton(
             onPressed: _skipOnboarding,
             style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: EdgeInsets.symmetric(
+                horizontal: isTablet ? 20 : 16,
+                vertical: isTablet ? 12 : 8,
+              ),
             ),
-            child: const Text(
+            child: Text(
               'Skip',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: isTablet ? 18 : 16,
                 color: AppColors.lightText,
                 fontWeight: FontWeight.w500,
               ),
@@ -166,15 +246,28 @@ class _OnboardingPageState extends State<OnboardingPage> {
     );
   }
 
-  Widget _buildOnboardingPage(OnboardingData data) {
+  Widget _buildOnboardingPage(
+    OnboardingData data,
+    Size size, {
+    bool isTablet = false,
+    bool isLandscape = false,
+  }) {
+    final horizontalPadding = isTablet ? 48.0 : 24.0;
+    final imageHeight = isLandscape
+        ? size.height * 0.3
+        : size.height * (isTablet ? 0.21 : 0.25);
+
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.symmetric(
+        horizontal: horizontalPadding,
+        vertical: isLandscape ? 12.0 : 24.0,
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Image
           Container(
-            height: 200,
+            height: imageHeight,
             width: double.infinity,
             decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
             child: ClipRRect(
@@ -188,9 +281,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       color: AppColors.neutralGrey,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.medical_services,
-                      size: 100,
+                      size: isTablet ? 120 : 100,
                       color: AppColors.primary,
                     ),
                   );
@@ -199,13 +292,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
             ),
           ),
 
-          const SizedBox(height: 40),
+          SizedBox(height: isLandscape ? 16 : 24),
 
           // Title
           Text(
             data.title,
-            style: const TextStyle(
-              fontSize: 28,
+            style: TextStyle(
+              fontSize: isTablet ? 32 : (isLandscape ? 24 : 28),
               fontWeight: FontWeight.bold,
               color: AppColors.darkText,
               height: 1.3,
@@ -213,182 +306,223 @@ class _OnboardingPageState extends State<OnboardingPage> {
             textAlign: TextAlign.center,
           ),
 
-          const SizedBox(height: 12),
+          SizedBox(height: isLandscape ? 8 : 12),
 
           // Subtitle
           Text(
             data.subtitle,
-            style: const TextStyle(
-              fontSize: 18,
+            style: TextStyle(
+              fontSize: isTablet ? 20 : (isLandscape ? 16 : 18),
               color: AppColors.primary,
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: isLandscape ? 12 : 16),
 
           // Description
-          Text(
-            data.description,
-            style: const TextStyle(
-              fontSize: 16,
-              color: AppColors.lightText,
-              height: 1.5,
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: isTablet ? 600 : double.infinity,
             ),
-            textAlign: TextAlign.center,
+            child: Text(
+              data.description,
+              style: TextStyle(
+                fontSize: isTablet ? 18 : (isLandscape ? 14 : 16),
+                color: AppColors.lightText,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildBottomSection() {
+  Widget _buildBottomSection({
+    bool isTablet = false,
+    bool isLandscape = false,
+  }) {
+    final horizontalPadding = isTablet ? 48.0 : 24.0;
+
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.symmetric(
+        horizontal: horizontalPadding,
+        vertical: isLandscape ? 16.0 : 24.0,
+      ),
       child: Column(
+        mainAxisSize: isLandscape ? MainAxisSize.min : MainAxisSize.max,
         children: [
           // Page Indicators
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(
               _onboardingData.length,
-              (index) => _buildPageIndicator(index),
+              (index) => _buildPageIndicator(index, isTablet: isTablet),
             ),
           ),
 
-          const SizedBox(height: 32),
+          SizedBox(height: isLandscape ? 24 : 32),
 
           // Next/Get Started Button
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton(
-              onPressed: _nextPage,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.textOnPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 2,
-              ),
-              child: Text(
-                _currentPage == _onboardingData.length - 1
-                    ? 'Get Started'
-                    : 'Next',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: isTablet ? 400 : double.infinity,
             ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Alternative: Login/Sign Up Row (if needed)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                'Already have an account? ',
-                style: TextStyle(color: AppColors.lightText, fontSize: 14),
-              ),
-              TextButton(
-                onPressed: () {
-                  // Navigate to login
-                  context.goNamed(RouteNames.login);
-                },
-                child: const Text(
-                  'Sign In',
+            child: SizedBox(
+              width: double.infinity,
+              height: isTablet ? 64 : 56,
+              child: ElevatedButton(
+                onPressed: _nextPage,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.textOnPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 2,
+                ),
+                child: Text(
+                  _currentPage == _onboardingData.length - 1
+                      ? 'Get Started'
+                      : 'Next',
                   style: TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 14,
+                    fontSize: isTablet ? 20 : 18,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-            ],
+            ),
           ),
 
-          const SizedBox(height: 24),
+          SizedBox(height: isLandscape ? 12 : 16),
 
-          // Vendor option
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.secondary,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-            ),
-            child: Column(
+          // Alternative: Login/Sign Up Row (if needed)
+          if (!isLandscape) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Row(
-                  children: [
-                    Icon(Iconsax.shop, color: AppColors.primary, size: 24),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Are you a pharmacy owner?',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.darkText,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'Join as a vendor and start selling medicines online',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.lightText,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                Text(
+                  'Already have an account? ',
+                  style: TextStyle(
+                    color: AppColors.lightText,
+                    fontSize: isTablet ? 16 : 14,
+                  ),
                 ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () => context.go("/vendor-onboarding"),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                      side: const BorderSide(color: AppColors.primary),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      'Join as Vendor',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
+                TextButton(
+                  onPressed: () {
+                    // Navigate to login
+                    context.goNamed(RouteNames.login);
+                  },
+                  child: Text(
+                    'Sign In',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: isTablet ? 16 : 14,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ],
             ),
-          ),
+
+            SizedBox(height: isTablet ? 32 : 24),
+
+            // Vendor option
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: isTablet ? 500 : double.infinity,
+              ),
+              child: Container(
+                padding: EdgeInsets.all(isTablet ? 20 : 16),
+                decoration: BoxDecoration(
+                  color: AppColors.secondary,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Iconsax.shop,
+                          color: AppColors.primary,
+                          size: isTablet ? 28 : 24,
+                        ),
+                        SizedBox(width: isTablet ? 16 : 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Are you a pharmacy owner?',
+                                style: TextStyle(
+                                  fontSize: isTablet ? 18 : 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.darkText,
+                                ),
+                              ),
+                              SizedBox(height: isTablet ? 6 : 4),
+                              Text(
+                                'Join as a vendor and start selling medicines online',
+                                style: TextStyle(
+                                  fontSize: isTablet ? 14 : 12,
+                                  color: AppColors.lightText,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: isTablet ? 16 : 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: isTablet ? 52 : 44,
+                      child: OutlinedButton(
+                        onPressed: () => context.go("/vendor-onboarding"),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: const BorderSide(color: AppColors.primary),
+                          padding: EdgeInsets.symmetric(
+                            vertical: isTablet ? 16 : 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          'Join as Vendor',
+                          style: TextStyle(
+                            fontSize: isTablet ? 16 : 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildPageIndicator(int index) {
+  Widget _buildPageIndicator(int index, {bool isTablet = false}) {
+    final indicatorHeight = isTablet ? 10.0 : 8.0;
+    final indicatorWidth = _currentPage == index
+        ? (isTablet ? 32.0 : 24.0)
+        : (isTablet ? 10.0 : 8.0);
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      height: 8,
-      width: _currentPage == index ? 24 : 8,
+      margin: EdgeInsets.symmetric(horizontal: isTablet ? 6 : 4),
+      height: indicatorHeight,
+      width: indicatorWidth,
       decoration: BoxDecoration(
         color: _currentPage == index
             ? AppColors.primary

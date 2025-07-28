@@ -1253,97 +1253,117 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildCategoriesTab() {
     return SafeArea(
-      child: CustomScrollView(
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 1.0,
-              ),
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final category = _categories[index];
-                return GestureDetector(
-                  onTap: () {
-                    // Navigate to category medicines
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => MedicineSearchPage(
-                          category: category.name == 'Medicines'
-                              ? 'All'
-                              : category.name,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Determine crossAxisCount based on screen width
+          int crossAxisCount = 2;
+          double width = constraints.maxWidth;
+          if (width >= 900) {
+            crossAxisCount = 4;
+          } else if (width >= 600) {
+            crossAxisCount = 3;
+          }
+
+          double childAspectRatio = 0.95;
+          if (width >= 900) {
+            childAspectRatio = 1.1;
+          } else if (width >= 600) {
+            childAspectRatio = 1.05;
+          }
+
+          return CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.all(16),
+                sliver: SliverGrid(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: childAspectRatio,
+                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final category = _categories[index];
+                    return GestureDetector(
+                      onTap: () {
+                        // Navigate to category medicines
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => MedicineSearchPage(
+                              category: category.name == 'Medicines'
+                                  ? 'All'
+                                  : category.name,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.neutral,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Container(
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(16),
+                                    topRight: Radius.circular(16),
+                                  ),
+                                  border: Border.all(
+                                    color: AppColors.border,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(16),
+                                    topRight: Radius.circular(16),
+                                  ),
+                                  child: Image.asset(
+                                    category.image,
+                                    fit: BoxFit.cover,
+                                    alignment: Alignment.center,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              width: double.infinity,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                borderRadius: const BorderRadius.only(
+                                  bottomLeft: Radius.circular(12),
+                                  bottomRight: Radius.circular(12),
+                                ),
+                                border: Border.all(
+                                  color: AppColors.border,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                category.name,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.darkText,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.neutral,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          height: 140,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(16),
-                              topRight: Radius.circular(16),
-                            ),
-                            border: Border.all(
-                              color: AppColors.border,
-                              width: 1,
-                            ),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(16),
-                              topRight: Radius.circular(16),
-                            ),
-                            child: Image.asset(
-                              category.image,
-                              fit: BoxFit.cover,
-                              alignment: Alignment.center,
-                            ),
-                          ),
-                        ),
-
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          width: double.infinity,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.only(
-                              bottomLeft: Radius.circular(12),
-                              bottomRight: Radius.circular(12),
-                            ),
-                            border: Border.all(
-                              color: AppColors.border,
-                              width: 1,
-                            ),
-                          ),
-                          child: Text(
-                            category.name,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.darkText,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }, childCount: _categories.length),
-            ),
-          ),
-        ],
+                  }, childCount: _categories.length),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
