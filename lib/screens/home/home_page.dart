@@ -463,6 +463,113 @@ class _HomePageState extends State<HomePage> {
         ),
       ],
       child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: AppColors.primary,
+          centerTitle: false,
+          leadingWidth: 0,
+          title: BlocBuilder<LocationBloc, LocationState>(
+            builder: (context, locationState) {
+              return Row(
+                children: [
+                  Image.asset('assets/images/logow.png', height: 24),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Arogya Loop',
+                          style: TextStyle(
+                            color: AppColors.textOnPrimary,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(
+                Icons.notifications_outlined,
+                color: AppColors.textOnPrimary,
+              ),
+              onPressed: () {},
+            ),
+            const SizedBox(width: 8),
+            // build dropdown for languages
+            DropdownButton<String>(
+              dropdownColor: AppColors.primary,
+              focusColor: AppColors.primary,
+              value: lang,
+              underline: Container(),
+              borderRadius: BorderRadius.circular(8),
+              style: const TextStyle(color: AppColors.textOnPrimary),
+              icon: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: const Icon(
+                  Icons.language,
+                  color: AppColors.textOnPrimary,
+                ),
+              ),
+              items: const [
+                DropdownMenuItem(
+                  value: 'en',
+                  child: Text(
+                    'English',
+                    style: TextStyle(color: AppColors.textOnPrimary),
+                  ),
+                ),
+                DropdownMenuItem(
+                  value: 'hi',
+                  child: Text(
+                    'हिंदी',
+                    style: TextStyle(color: AppColors.textOnPrimary),
+                  ),
+                ),
+              ],
+              onChanged: (value) {
+                // Handle language change
+                if (value != null) {
+                  setState(() {
+                    lang = value;
+                  });
+                  //
+                }
+              },
+            ),
+            const SizedBox(width: 8),
+            PopupMenuButton<String>(
+              icon: const Icon(
+                Icons.more_vert_rounded,
+                color: AppColors.textOnPrimary,
+              ),
+              color: AppColors.neutral,
+              onSelected: (value) {
+                if (value == 'logout') {
+                  _showLogoutConfirmationDialog();
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem<String>(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout, color: AppColors.error),
+                      SizedBox(width: 8),
+                      Text('Logout', style: TextStyle(color: AppColors.error)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+
         backgroundColor: AppColors.background,
         body: IndexedStack(
           index: _currentIndex,
@@ -489,93 +596,6 @@ class _HomePageState extends State<HomePage> {
       child: CustomScrollView(
         slivers: [
           // App Bar
-          SliverAppBar(
-            floating: true,
-            title: BlocBuilder<LocationBloc, LocationState>(
-              builder: (context, locationState) {
-                return Row(
-                  spacing: 6,
-                  children: [
-                    Image.asset('assets/images/logow.png', height: 24),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Arogya Loop',
-                            style: TextStyle(
-                              color: AppColors.textOnPrimary,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-            leadingWidth: 0,
-            backgroundColor: AppColors.primary,
-            centerTitle: false,
-            actions: [
-              IconButton(
-                icon: const Icon(
-                  Icons.notifications_outlined,
-                  color: AppColors.textOnPrimary,
-                ),
-                onPressed: () {},
-              ),
-              const SizedBox(width: 8),
-              // build dropdown for languages
-              DropdownButton<String>(
-                dropdownColor: AppColors.primary,
-                focusColor: AppColors.primary,
-                value: lang,
-                underline: Container(),
-                borderRadius: BorderRadius.circular(8),
-                style: const TextStyle(color: AppColors.textOnPrimary),
-                icon: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: const Icon(
-                    Icons.language,
-                    color: AppColors.textOnPrimary,
-                  ),
-                ),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'en',
-                    child: Text(
-                      'English',
-                      style: TextStyle(color: AppColors.textOnPrimary),
-                    ),
-                  ),
-                  DropdownMenuItem(
-                    value: 'hi',
-                    child: Text(
-                      'हिंदी',
-                      style: TextStyle(color: AppColors.textOnPrimary),
-                    ),
-                  ),
-                ],
-                onChanged: (value) {
-                  // Handle language change
-                  if (value != null) {
-                    setState(() {
-                      lang = value;
-                    });
-                    //
-                  }
-                },
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: const Icon(Icons.logout, color: AppColors.textOnPrimary),
-                onPressed: _showLogoutConfirmationDialog,
-              ),
-            ],
-          ),
 
           // Search Bar
           SliverToBoxAdapter(
@@ -1235,58 +1255,6 @@ class _HomePageState extends State<HomePage> {
     return SafeArea(
       child: CustomScrollView(
         slivers: [
-          SliverAppBar(
-            pinned: true,
-            title: const Text(
-              'Categories',
-              style: TextStyle(color: AppColors.textOnPrimary),
-            ),
-            backgroundColor: AppColors.primary,
-            actions: [
-              // build dropdown for languages
-              DropdownButton<String>(
-                dropdownColor: AppColors.primary,
-                focusColor: AppColors.primary,
-                value: lang,
-                underline: Container(),
-                borderRadius: BorderRadius.circular(8),
-                style: const TextStyle(color: AppColors.textOnPrimary),
-                icon: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: const Icon(
-                    Icons.language,
-                    color: AppColors.textOnPrimary,
-                  ),
-                ),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'en',
-                    child: Text(
-                      'English',
-                      style: TextStyle(color: AppColors.textOnPrimary),
-                    ),
-                  ),
-                  DropdownMenuItem(
-                    value: 'hi',
-                    child: Text(
-                      'हिंदी',
-                      style: TextStyle(color: AppColors.textOnPrimary),
-                    ),
-                  ),
-                ],
-                onChanged: (value) {
-                  // Handle language change
-                  if (value != null) {
-                    setState(() {
-                      lang = value;
-                    });
-                    //
-                  }
-                },
-              ),
-              const SizedBox(width: 8),
-            ],
-          ),
           SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverGrid(

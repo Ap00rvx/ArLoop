@@ -64,30 +64,32 @@ class _OnboardingPageState extends State<OnboardingPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Skip Button
-            _buildSkipButton(),
-
-            // Page View
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentPage = index;
-                  });
-                },
-                itemCount: _onboardingData.length,
-                itemBuilder: (context, index) {
-                  return _buildOnboardingPage(_onboardingData[index]);
-                },
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // Skip Button
+              _buildSkipButton(),
+          
+              // Page View
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentPage = index;
+                    });
+                  },
+                  itemCount: _onboardingData.length,
+                  itemBuilder: (context, index) {
+                    return _buildOnboardingPage(_onboardingData[index]);
+                  },
+                ),
               ),
-            ),
-
-            // Bottom Section
-            _buildBottomSection(),
-          ],
+          
+              // Bottom Section
+              _buildBottomSection(),
+            ],
+          ),
         ),
       ),
     );

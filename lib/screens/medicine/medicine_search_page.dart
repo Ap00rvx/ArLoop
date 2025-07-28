@@ -16,7 +16,11 @@ class MedicineSearchPage extends StatefulWidget {
   final String? category;
   final bool isEmergency;
 
-  const MedicineSearchPage({super.key, this.category, this.isEmergency = false});
+  const MedicineSearchPage({
+    super.key,
+    this.category,
+    this.isEmergency = false,
+  });
 
   @override
   State<MedicineSearchPage> createState() => _MedicineSearchPageState();
@@ -79,7 +83,6 @@ class _MedicineSearchPageState extends State<MedicineSearchPage> {
     _searchController.dispose();
     super.dispose();
     _isEmergency = widget.isEmergency;
-
   }
 
   @override
@@ -599,6 +602,9 @@ Widget _buildMedicineCard(
                                       context.read<CartBloc>().add(
                                         AddToCartEvent(medicine),
                                       );
+                                      context.read<CartBloc>().add(
+                                        LoadCartEvent(),
+                                      );
                                     },
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
@@ -677,6 +683,9 @@ Widget _buildMedicineCard(
                                               quantity - 1,
                                             ),
                                           );
+                                          context.read<CartBloc>().add(
+                                            LoadCartEvent(),
+                                          );
                                         } else {
                                           context.read<CartBloc>().add(
                                             RemoveFromCartEvent(medicine.id),
@@ -750,6 +759,9 @@ Widget _buildMedicineCard(
                                             medicine.id,
                                             quantity + 1,
                                           ),
+                                        );
+                                        context.read<CartBloc>().add(
+                                          LoadCartEvent(),
                                         );
                                       },
                                 child: Container(
