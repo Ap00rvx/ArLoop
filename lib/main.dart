@@ -10,6 +10,7 @@ import 'package:arloop/services/cart_service.dart';
 import 'package:arloop/services/firebase_google_auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -43,6 +44,12 @@ void main() async {
     });
   });
   // await FlutterSecureStorage().deleteAll();
+  // system orientation
+
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   runApp(ArLoopApp(firebaseGoogleAuthService: firebaseGoogleAuthService));
 }
 

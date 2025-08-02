@@ -204,7 +204,7 @@ class _RegisterPageState extends State<RegisterPage> {
           if (state.status == AuthenticationStatus.failure) {
             _showErrorSnackBar(state.errorMessage ?? "Registration failed");
           } else if (state.status == AuthenticationStatus.authenticated) {
-              final token = state.token;
+            final token = state.token;
             await FlutterSecureStorage().write(key: "auth_token", value: token);
             _showSuccessSnackBar('Registration successful!');
             context.goNamed(RouteNames.home);
@@ -299,7 +299,7 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
             child: Center(
               child: Image.asset(
-                'assets/images/logo.png', // Replace with your logo asset
+                'assets/images/login_logo.png', // Replace with your logo asset
                 height: 200,
                 width: 200,
                 errorBuilder: (context, error, stackTrace) {

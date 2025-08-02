@@ -113,7 +113,7 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: BlocListener<AuthenticationBloc, AuthenticationState>(
-        listener: (context, state)async {
+        listener: (context, state) async {
           // TODO: implement listener
           if (state.status == AuthenticationStatus.failure) {
             _showErrorSnackBar(state.errorMessage ?? 'Login failed');
@@ -216,7 +216,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
             child: Center(
               child: Image.asset(
-                'assets/images/logo.png', // Replace with your logo asset
+                'assets/images/login_logo.png', // Replace with your logo asset
                 height: 200,
                 width: 200,
                 errorBuilder: (context, error, stackTrace) {

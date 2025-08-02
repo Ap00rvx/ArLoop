@@ -245,8 +245,8 @@ class _VendorHomeState extends State<VendorHome> {
           children: [
             // ArogyaLoop Logo
             Container(
-              height: 32,
-              width: 32,
+              height: 45,
+              width: 45,
               decoration: BoxDecoration(
                 color: Colors.transparent,
                 borderRadius: BorderRadius.circular(8),

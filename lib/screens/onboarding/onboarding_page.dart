@@ -254,8 +254,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }) {
     final horizontalPadding = isTablet ? 48.0 : 24.0;
     final imageHeight = isLandscape
-        ? size.height * 0.3
-        : size.height * (isTablet ? 0.21 : 0.25);
+        ? size.height * 0.27
+        : size.height * (isTablet ? 0.20 : 0.18);
 
     return Padding(
       padding: EdgeInsets.symmetric(
@@ -292,7 +292,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
             ),
           ),
 
-          SizedBox(height: isLandscape ? 16 : 24),
+          SizedBox(height: isLandscape ? 16 : 20),
 
           // Title
           Text(
@@ -306,20 +306,20 @@ class _OnboardingPageState extends State<OnboardingPage> {
             textAlign: TextAlign.center,
           ),
 
-          SizedBox(height: isLandscape ? 8 : 12),
+          SizedBox(height: isLandscape ? 8 : 10),
 
           // Subtitle
           Text(
             data.subtitle,
             style: TextStyle(
-              fontSize: isTablet ? 20 : (isLandscape ? 16 : 18),
+              fontSize: isTablet ? 20 : (isLandscape ? 14 : 16),
               color: AppColors.primary,
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
           ),
 
-          SizedBox(height: isLandscape ? 12 : 16),
+          SizedBox(height: isLandscape ? 10 : 12),
 
           // Description
           ConstrainedBox(
