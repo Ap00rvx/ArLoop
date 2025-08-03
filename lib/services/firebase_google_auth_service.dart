@@ -74,6 +74,7 @@ class FirebaseGoogleAuthService {
 
       // Start Google Sign-In process
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      
       print('Google user: $googleUser');
 
       if (googleUser == null) {

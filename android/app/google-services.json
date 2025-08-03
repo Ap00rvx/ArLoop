@@ -1,81 +1,45 @@
 {
   "project_info": {
-    "project_number": "417472319648",
-    "project_id": "arloop-728dc",
-    "storage_bucket": "arloop-728dc.firebasestorage.app"
+    "project_number": "378791241160",
+    "project_id": "arogya-loop",
+    "storage_bucket": "arogya-loop.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:417472319648:android:9f8ec23007f72735cb79c5",
+        "mobilesdk_app_id": "1:378791241160:android:74b970fec150c310874cfd",
         "android_client_info": {
           "package_name": "com.arloop.arloop"
         }
       },
       "oauth_client": [
         {
-          "client_id": "417472319648-5t1tbimpi732ilkfs95bghuc59jmjvli.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyCsRin0UCje-yGttKRGV_23x1djrczR5dc"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "417472319648-5t1tbimpi732ilkfs95bghuc59jmjvli.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "417472319648-ci7op5lqkeo5juftqfi15rtlvihd1hmn.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.arloop.arloop"
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:417472319648:android:1ef1286942fa138ecb79c5",
-        "android_client_info": {
-          "package_name": "com.arloop.arlopp"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "417472319648-k7b5vfvrt56lu5q6ln3r0q8sppfi6p8r.apps.googleusercontent.com",
+          "client_id": "378791241160-lbt4rqiib6furd3pb0tbe574p7qpfv5v.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.arloop.arlopp",
-            "certificate_hash": "6b34d632a7f03e58118f47e803fb5b4b827a37e4"
+            "package_name": "com.arloop.arloop",
+            "certificate_hash": "61235b3e3c580d6c63a707d16b53db6ab9a0e906"
           }
         },
         {
-          "client_id": "417472319648-5t1tbimpi732ilkfs95bghuc59jmjvli.apps.googleusercontent.com",
+          "client_id": "378791241160-v3pqqdc6adtb1pspad61unc4mreiprog.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyCsRin0UCje-yGttKRGV_23x1djrczR5dc"
+          "current_key": "AIzaSyCBNty1xhdqr2YLzUEQgAPBzghEZxV0pk8"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "417472319648-5t1tbimpi732ilkfs95bghuc59jmjvli.apps.googleusercontent.com",
+              "client_id": "378791241160-v3pqqdc6adtb1pspad61unc4mreiprog.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "417472319648-ci7op5lqkeo5juftqfi15rtlvihd1hmn.apps.googleusercontent.com",
+              "client_id": "378791241160-o1m28ihqmndbbe28su0q989aitth4psl.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
                 "bundle_id": "com.arloop.arloop"

@@ -37,7 +37,10 @@ class GoogleAuthService {
 
       // Determine client ID based on platform
       String? clientId;
-
+      if (_googleSignIn != null) {
+        print('Google Sign-In already initialized');
+        return;
+      }
       if (kIsWeb) {
         clientId = _webClientId.isEmpty ? null : _webClientId;
       } else if (defaultTargetPlatform == TargetPlatform.android) {
@@ -135,12 +138,15 @@ class GoogleAuthService {
   Future<GoogleUser?> signIn() async {
     try {
       if (_googleSignIn == null) {
+        print('Google Sign-In not initialized, initializing now...');
         await initialize();
       }
 
       _errorMessage = '';
+      print('Attempting to sign in with Google...');
 
       final GoogleSignInAccount? user = await _googleSignIn!.signIn();
+      print('User signed in: $user');
 
       if (user != null) {
         _currentUser = user;

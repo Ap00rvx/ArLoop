@@ -50,19 +50,19 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCsRin0UCje-yGttKRGV_23x1djrczR5dc',
-    appId: '1:417472319648:android:9f8ec23007f72735cb79c5',
-    messagingSenderId: '417472319648',
-    projectId: 'arloop-728dc',
-    storageBucket: 'arloop-728dc.firebasestorage.app',
+    apiKey: 'AIzaSyCBNty1xhdqr2YLzUEQgAPBzghEZxV0pk8',
+    appId: '1:378791241160:android:74b970fec150c310874cfd',
+    messagingSenderId: '378791241160',
+    projectId: 'arogya-loop',
+    storageBucket: 'arogya-loop.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBJiluEfrDVIWPjTGQJXOb0UBTgkKuZFKI',
-    appId: '1:417472319648:ios:64d24933cc92f50ccb79c5',
-    messagingSenderId: '417472319648',
-    projectId: 'arloop-728dc',
-    storageBucket: 'arloop-728dc.firebasestorage.app',
+    apiKey: 'AIzaSyDLVLqgRYEi1SB-Pgp9i2zi6-6565aQr-A',
+    appId: '1:378791241160:ios:1323f7b142124bcf874cfd',
+    messagingSenderId: '378791241160',
+    projectId: 'arogya-loop',
+    storageBucket: 'arogya-loop.firebasestorage.app',
     iosBundleId: 'com.arloop.arloop',
   );
 }

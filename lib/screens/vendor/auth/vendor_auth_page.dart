@@ -205,8 +205,10 @@ class _LoginTabState extends State<_LoginTab> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your email';
                       }
-                      if (!value.contains('@')) {
-                        return 'Please enter a valid email';
+                      if (!RegExp(
+                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                      ).hasMatch(value)) {
+                        return 'Please enter a valid email address';
                       }
                       return null;
                     },
@@ -242,6 +244,11 @@ class _LoginTabState extends State<_LoginTab> {
                       }
                       if (value.length < 6) {
                         return 'Password must be at least 6 characters';
+                      }
+                      if (!RegExp(
+                        r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]',
+                      ).hasMatch(value)) {
+                        return 'Password must contain uppercase, lowercase, number & special character';
                       }
                       return null;
                     },
@@ -423,16 +430,35 @@ class _RegisterTabState extends State<_RegisterTab> {
       _showSnackBar('Please enter owner name');
       return false;
     }
-    if (_emailController.text.isEmpty || !_emailController.text.contains('@')) {
-      _showSnackBar('Please enter a valid email');
+    if (_ownerNameController.text.length < 2) {
+      _showSnackBar('Owner name must be at least 2 characters');
+      return false;
+    }
+    if (_emailController.text.isEmpty ||
+        !RegExp(
+          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+        ).hasMatch(_emailController.text)) {
+      _showSnackBar('Please enter a valid email address');
       return false;
     }
     if (_phoneController.text.isEmpty || _phoneController.text.length < 10) {
-      _showSnackBar('Please enter a valid phone number');
+      _showSnackBar('Please enter a valid 10-digit phone number');
+      return false;
+    }
+    if (!RegExp(r'^[0-9]{10}$').hasMatch(_phoneController.text)) {
+      _showSnackBar('Phone number must contain only digits');
       return false;
     }
     if (_passwordController.text.length < 6) {
       _showSnackBar('Password must be at least 6 characters');
+      return false;
+    }
+    if (!RegExp(
+      r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]',
+    ).hasMatch(_passwordController.text)) {
+      _showSnackBar(
+        'Password must contain uppercase, lowercase, number & special character',
+      );
       return false;
     }
     if (_passwordController.text != _confirmPasswordController.text) {
@@ -447,8 +473,30 @@ class _RegisterTabState extends State<_RegisterTab> {
       _showSnackBar('Please enter shop name');
       return false;
     }
+    if (_shopNameController.text.length < 3) {
+      _showSnackBar('Shop name must be at least 3 characters');
+      return false;
+    }
     if (_licenseNumberController.text.isEmpty) {
       _showSnackBar('Please enter license number');
+      return false;
+    }
+    if (_licenseNumberController.text.length < 5) {
+      _showSnackBar('Please enter a valid license number');
+      return false;
+    }
+    if (_gstNumberController.text.isEmpty) {
+      _showSnackBar('Please enter GST number');
+      return false;
+    }
+    if (_gstNumberController.text.length != 15) {
+      _showSnackBar('GST number must be exactly 15 characters');
+      return false;
+    }
+    if (!RegExp(
+      r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$',
+    ).hasMatch(_gstNumberController.text)) {
+      _showSnackBar('Please enter a valid GST number format');
       return false;
     }
     if (!_isValidTimeFormat(_openTimeController.text)) {
@@ -480,16 +528,32 @@ class _RegisterTabState extends State<_RegisterTab> {
       _showSnackBar('Please enter street address');
       return false;
     }
+    if (_streetController.text.length < 5) {
+      _showSnackBar('Street address must be at least 5 characters');
+      return false;
+    }
     if (_cityController.text.isEmpty) {
       _showSnackBar('Please enter city');
+      return false;
+    }
+    if (_cityController.text.length < 2) {
+      _showSnackBar('City name must be at least 2 characters');
       return false;
     }
     if (_stateController.text.isEmpty) {
       _showSnackBar('Please enter state');
       return false;
     }
+    if (_stateController.text.length < 2) {
+      _showSnackBar('State name must be at least 2 characters');
+      return false;
+    }
     if (_pincodeController.text.isEmpty) {
       _showSnackBar('Please enter pincode');
+      return false;
+    }
+    if (!RegExp(r'^[0-9]{6}$').hasMatch(_pincodeController.text)) {
+      _showSnackBar('Pincode must be exactly 6 digits');
       return false;
     }
     return true;
@@ -511,9 +575,7 @@ class _RegisterTabState extends State<_RegisterTab> {
         shopDetails: ShopDetails(
           shopName: _shopNameController.text.trim(),
           licenseNumber: _licenseNumberController.text.trim(),
-          gstNumber: _gstNumberController.text.trim().isEmpty
-              ? null
-              : _gstNumberController.text.trim(),
+          gstNumber: _gstNumberController.text.trim(), // Now mandatory
           shopAddress: ShopAddress(
             street: _streetController.text.trim(),
             city: _cityController.text.trim(),
@@ -710,14 +772,26 @@ class _RegisterTabState extends State<_RegisterTab> {
           // Owner Name
           TextFormField(
             controller: _ownerNameController,
+            textCapitalization: TextCapitalization.words,
             decoration: InputDecoration(
-              labelText: 'Owner Name',
+              labelText: 'Owner Name *',
               hintText: 'Enter your full name',
               prefixIcon: const Icon(Iconsax.user),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
+              filled: true,
+              fillColor: Colors.grey[50],
             ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Owner name is required';
+              }
+              if (value.length < 2) {
+                return 'Name must be at least 2 characters';
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 16),
 
@@ -726,13 +800,26 @@ class _RegisterTabState extends State<_RegisterTab> {
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
             decoration: InputDecoration(
-              labelText: 'Email Address',
+              labelText: 'Email Address *',
               hintText: 'Enter your email',
               prefixIcon: const Icon(Iconsax.sms),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
+              filled: true,
+              fillColor: Colors.grey[50],
             ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Email is required';
+              }
+              if (!RegExp(
+                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+              ).hasMatch(value)) {
+                return 'Please enter a valid email address';
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 16),
 
@@ -740,14 +827,27 @@ class _RegisterTabState extends State<_RegisterTab> {
           TextFormField(
             controller: _phoneController,
             keyboardType: TextInputType.phone,
+            maxLength: 10,
             decoration: InputDecoration(
-              labelText: 'Phone Number',
-              hintText: 'Enter your phone number',
+              labelText: 'Phone Number *',
+              hintText: 'Enter your 10-digit phone number',
               prefixIcon: const Icon(Iconsax.call),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
+              filled: true,
+              fillColor: Colors.grey[50],
+              counterText: '',
             ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Phone number is required';
+              }
+              if (!RegExp(r'^[0-9]{10}$').hasMatch(value)) {
+                return 'Please enter a valid 10-digit phone number';
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 16),
 
@@ -756,7 +856,7 @@ class _RegisterTabState extends State<_RegisterTab> {
             controller: _passwordController,
             obscureText: !_isPasswordVisible,
             decoration: InputDecoration(
-              labelText: 'Password',
+              labelText: 'Password *',
               hintText: 'Enter your password',
               prefixIcon: const Icon(Iconsax.lock),
               suffixIcon: IconButton(
@@ -772,7 +872,25 @@ class _RegisterTabState extends State<_RegisterTab> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
+              filled: true,
+              fillColor: Colors.grey[50],
+              helperText: 'Min 6 chars, 1 uppercase, 1 number, 1 special char',
+              helperMaxLines: 2,
             ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Password is required';
+              }
+              if (value.length < 6) {
+                return 'Password must be at least 6 characters';
+              }
+              if (!RegExp(
+                r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]',
+              ).hasMatch(value)) {
+                return 'Password must contain uppercase, lowercase, number & special character';
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 16),
 
@@ -781,7 +899,7 @@ class _RegisterTabState extends State<_RegisterTab> {
             controller: _confirmPasswordController,
             obscureText: !_isConfirmPasswordVisible,
             decoration: InputDecoration(
-              labelText: 'Confirm Password',
+              labelText: 'Confirm Password *',
               hintText: 'Confirm your password',
               prefixIcon: const Icon(Iconsax.lock),
               suffixIcon: IconButton(
@@ -797,7 +915,18 @@ class _RegisterTabState extends State<_RegisterTab> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
+              filled: true,
+              fillColor: Colors.grey[50],
             ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please confirm your password';
+              }
+              if (value != _passwordController.text) {
+                return 'Passwords do not match';
+              }
+              return null;
+            },
           ),
         ],
       ),
@@ -828,42 +957,86 @@ class _RegisterTabState extends State<_RegisterTab> {
           // Shop Name
           TextFormField(
             controller: _shopNameController,
+            textCapitalization: TextCapitalization.words,
             decoration: InputDecoration(
-              labelText: 'Shop Name',
+              labelText: 'Shop Name *',
               hintText: 'Enter your pharmacy name',
               prefixIcon: const Icon(Iconsax.shop),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
+              filled: true,
+              fillColor: Colors.grey[50],
             ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Shop name is required';
+              }
+              if (value.length < 3) {
+                return 'Shop name must be at least 3 characters';
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 16),
 
           // License Number
           TextFormField(
             controller: _licenseNumberController,
+            textCapitalization: TextCapitalization.characters,
             decoration: InputDecoration(
-              labelText: 'License Number',
+              labelText: 'License Number *',
               hintText: 'Enter your pharmacy license number',
               prefixIcon: const Icon(Iconsax.document),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
+              filled: true,
+              fillColor: Colors.grey[50],
             ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'License number is required';
+              }
+              if (value.length < 5) {
+                return 'Please enter a valid license number';
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 16),
 
-          // GST Number (Optional)
+          // GST Number (Now Mandatory)
           TextFormField(
             controller: _gstNumberController,
+            textCapitalization: TextCapitalization.characters,
+            maxLength: 15,
             decoration: InputDecoration(
-              labelText: 'GST Number (Optional)',
-              hintText: 'Enter your GST number',
+              labelText: 'GST Number *',
+              hintText: 'Enter your 15-digit GST number',
               prefixIcon: const Icon(Iconsax.receipt),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
+              filled: true,
+              fillColor: Colors.grey[50],
+              counterText: '',
+              helperText: 'Format: 22AAAAA0000A1Z5',
             ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'GST number is required';
+              }
+              if (value.length != 15) {
+                return 'GST number must be exactly 15 characters';
+              }
+              if (!RegExp(
+                r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$',
+              ).hasMatch(value)) {
+                return 'Please enter a valid GST number format';
+              }
+              return null;
+            },
           ),
 
           const SizedBox(height: 24),
@@ -885,15 +1058,23 @@ class _RegisterTabState extends State<_RegisterTab> {
                 child: TextFormField(
                   controller: _openTimeController,
                   decoration: InputDecoration(
-                    labelText: 'Opening Time',
+                    labelText: 'Opening Time *',
                     hintText: 'HH:MM (24-hour format)',
                     prefixIcon: const Icon(Iconsax.clock),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
                   ),
                   onTap: () => _selectTime(_openTimeController),
                   readOnly: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Opening time is required';
+                    }
+                    return null;
+                  },
                 ),
               ),
               const SizedBox(width: 16),
@@ -901,15 +1082,23 @@ class _RegisterTabState extends State<_RegisterTab> {
                 child: TextFormField(
                   controller: _closeTimeController,
                   decoration: InputDecoration(
-                    labelText: 'Closing Time',
+                    labelText: 'Closing Time *',
                     hintText: 'HH:MM (24-hour format)',
                     prefixIcon: const Icon(Iconsax.clock),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
                   ),
                   onTap: () => _selectTime(_closeTimeController),
                   readOnly: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Closing time is required';
+                    }
+                    return null;
+                  },
                 ),
               ),
             ],
@@ -919,12 +1108,17 @@ class _RegisterTabState extends State<_RegisterTab> {
 
           // Working Days Section
           const Text(
-            'Working Days',
+            'Working Days *',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: AppColors.darkText,
             ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Select at least one working day',
+            style: TextStyle(fontSize: 14, color: AppColors.lightText),
           ),
           const SizedBox(height: 16),
 
@@ -933,24 +1127,45 @@ class _RegisterTabState extends State<_RegisterTab> {
             decoration: BoxDecoration(
               border: Border.all(color: AppColors.neutralGrey),
               borderRadius: BorderRadius.circular(12),
+              color: Colors.grey[50],
             ),
             child: Column(
               children: _allDays.map((day) {
-                return CheckboxListTile(
-                  title: Text(day),
-                  value: _selectedWorkingDays.contains(day),
-                  onChanged: (bool? value) {
-                    setState(() {
-                      if (value == true) {
-                        _selectedWorkingDays.add(day);
-                      } else {
-                        _selectedWorkingDays.remove(day);
-                      }
-                    });
-                  },
-                  activeColor: AppColors.primary,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  contentPadding: EdgeInsets.zero,
+                final isSelected = _selectedWorkingDays.contains(day);
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.primary.withOpacity(0.1)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: CheckboxListTile(
+                    title: Text(
+                      day,
+                      style: TextStyle(
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.darkText,
+                      ),
+                    ),
+                    value: isSelected,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        if (value == true) {
+                          _selectedWorkingDays.add(day);
+                        } else {
+                          _selectedWorkingDays.remove(day);
+                        }
+                      });
+                    },
+                    activeColor: AppColors.primary,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
                 );
               }).toList(),
             ),
@@ -1022,17 +1237,25 @@ class _RegisterTabState extends State<_RegisterTab> {
           // Select Location Button
           SizedBox(
             width: double.infinity,
+            height: 50,
             child: ElevatedButton.icon(
               onPressed: _selectLocation,
               icon: const Icon(Iconsax.gps),
-              label: const Text('Select Location on Map'),
+              label: Text(
+                _selectedLocation != null
+                    ? 'Location Selected ✓'
+                    : 'Select Location on Map *',
+              ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: _selectedLocation != null
+                    ? AppColors.success
+                    : AppColors.primary,
                 foregroundColor: AppColors.textOnPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
+                elevation: _selectedLocation != null ? 0 : 2,
               ),
             ),
           ),
@@ -1042,14 +1265,27 @@ class _RegisterTabState extends State<_RegisterTab> {
           // Address Fields
           TextFormField(
             controller: _streetController,
+            textCapitalization: TextCapitalization.words,
+            maxLines: 2,
             decoration: InputDecoration(
-              labelText: 'Street Address',
-              hintText: 'Enter street address',
+              labelText: 'Street Address *',
+              hintText: 'Enter complete street address',
               prefixIcon: const Icon(Iconsax.location),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
+              filled: true,
+              fillColor: Colors.grey[50],
             ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Street address is required';
+              }
+              if (value.length < 5) {
+                return 'Street address must be at least 5 characters';
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 16),
 
@@ -1058,28 +1294,52 @@ class _RegisterTabState extends State<_RegisterTab> {
               Expanded(
                 child: TextFormField(
                   controller: _cityController,
+                  textCapitalization: TextCapitalization.words,
                   decoration: InputDecoration(
-                    labelText: 'City',
+                    labelText: 'City *',
                     hintText: 'Enter city',
                     prefixIcon: const Icon(Iconsax.buildings),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
                   ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'City is required';
+                    }
+                    if (value.length < 2) {
+                      return 'Invalid city name';
+                    }
+                    return null;
+                  },
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: TextFormField(
                   controller: _stateController,
+                  textCapitalization: TextCapitalization.words,
                   decoration: InputDecoration(
-                    labelText: 'State',
+                    labelText: 'State *',
                     hintText: 'Enter state',
                     prefixIcon: const Icon(Iconsax.map),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
                   ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'State is required';
+                    }
+                    if (value.length < 2) {
+                      return 'Invalid state name';
+                    }
+                    return null;
+                  },
                 ),
               ),
             ],
@@ -1089,41 +1349,80 @@ class _RegisterTabState extends State<_RegisterTab> {
           TextFormField(
             controller: _pincodeController,
             keyboardType: TextInputType.number,
+            maxLength: 6,
             decoration: InputDecoration(
-              labelText: 'Pincode',
-              hintText: 'Enter pincode',
+              labelText: 'Pincode *',
+              hintText: 'Enter 6-digit pincode',
               prefixIcon: const Icon(Iconsax.location_tick),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
+              filled: true,
+              fillColor: Colors.grey[50],
+              counterText: '',
             ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Pincode is required';
+              }
+              if (!RegExp(r'^[0-9]{6}$').hasMatch(value)) {
+                return 'Pincode must be exactly 6 digits';
+              }
+              return null;
+            },
           ),
 
           const SizedBox(height: 24),
 
           // Selected Location Display
           if (_selectedLocation != null) ...[
-            const Text(
-              'Selected Location',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.darkText,
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.success.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.success.withOpacity(0.3)),
               ),
-            ),
-            const SizedBox(height: 8),
-            if (_fullAddress.isNotEmpty)
-              Text(
-                'Address: $_fullAddress',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.lightText,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Iconsax.tick_circle,
+                        color: AppColors.success,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Location Selected',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.success,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (_fullAddress.isNotEmpty)
+                    Text(
+                      'Address: $_fullAddress',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.darkText,
+                      ),
+                    ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Coordinates: ${_selectedLocation!.latitude.toStringAsFixed(6)}, ${_selectedLocation!.longitude.toStringAsFixed(6)}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.lightText,
+                    ),
+                  ),
+                ],
               ),
-            const SizedBox(height: 8),
-            Text(
-              'Lat: ${_selectedLocation!.latitude.toStringAsFixed(6)}, Lng: ${_selectedLocation!.longitude.toStringAsFixed(6)}',
-              style: const TextStyle(fontSize: 12, color: AppColors.lightText),
             ),
           ],
         ],
